@@ -1,0 +1,36 @@
+import { Component, inject, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { SessionService } from '../../core/services/session.service';
+import { professionalFullName } from '../queue/models/queue.model';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss'
+})
+export class DashboardComponent {
+  private session = inject(SessionService);
+  private router = inject(Router);
+
+  readonly professional = this.session.professional;
+  readonly office = this.session.office;
+
+  readonly professionalName = computed(() => {
+    const p = this.professional();
+    return p ? professionalFullName(p) : '';
+  });
+
+  readonly initials = computed(() => {
+    const p = this.professional();
+    if (!p) return '?';
+    return `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
+  });
+
+  logout(): void {
+    this.session.logout();
+    this.router.navigate(['/login']);
+  }
+}

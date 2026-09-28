@@ -1,0 +1,96 @@
+<div class="login-bg">
+  <div class="login-card">
+
+    <!-- Logo / ícono -->
+    <div class="login-logo">
+      <span style="font-family: var(--font-brand); font-size: 4rem; line-height: 1; font-weight: 400; font-style: italic; color: var(--color-brand-purple); padding-right: 2px; text-shadow: 0 8px 24px rgba(134, 99, 133, 0.25);">S</span>
+    </div>
+
+    <h1 class="login-title">Sistema Odontológico</h1>
+    <p class="login-subtitle">Seleccioná tu nombre y consultorio para ingresar</p>
+
+    <!-- Error de conexión -->
+    <div class="error-banner" *ngIf="errorMsg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ errorMsg() }}
+    </div>
+
+    <form class="login-form" (submit)="$event.preventDefault(); login()">
+
+      <!-- Profesional -->
+      <div class="field">
+        <label class="field-label" for="select-prof">Odontólogo / Profesional</label>
+
+        <div class="select-wrapper" [class.loading]="loadingProfessionals()">
+          <select
+            id="select-prof"
+            class="field-select"
+            [ngModel]="selectedProfId()"
+            (ngModelChange)="selectedProfId.set($event)"
+            name="profesional"
+            [disabled]="loadingProfessionals()"
+            required
+          >
+            <option value="" disabled>
+              {{ loadingProfessionals() ? 'Cargando...' : '— Seleccioná un profesional —' }}
+            </option>
+            <option
+              *ngFor="let prof of professionals(); trackBy: trackByProfId"
+              [value]="prof._id"
+            >
+              {{ professionalFullName(prof) }}
+            </option>
+          </select>
+          <div class="select-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consultorio -->
+      <div class="field">
+        <label class="field-label" for="select-office">Consultorio</label>
+        <div class="select-wrapper">
+          <select
+            id="select-office"
+            class="field-select"
+            [ngModel]="selectedOffice()"
+            (ngModelChange)="selectedOffice.set($event)"
+            name="consultorio"
+            required
+          >
+            <option value="" disabled>— Seleccioná un consultorio —</option>
+            <option *ngFor="let o of offices" [value]="o">{{ o }}</option>
+          </select>
+          <div class="select-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón login -->
+      <button
+        type="submit"
+        class="btn-login"
+        id="btn-login"
+        [disabled]="!canLogin()"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Ingresar
+      </button>
+
+    </form>
+
+  </div>
+</div>
