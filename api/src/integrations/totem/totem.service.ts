@@ -1,36 +1,47 @@
-import { queueService } from '../../modules/queue/queue.service';
+﻿import { queueService } from '../../modules/queue/queue.service';
 import { QueueSource } from '../../modules/queue/queue.types';
 import { Professional } from '../../modules/professionals/professional.model';
+import { Patient } from '../../modules/patients/patient.model';
 import { TotemPatientRecord } from './totem.types';
 import { logger } from '../../utils/logger';
-import {
-  emitPatientAdded,
-} from '../../modules/queue/queue.socket';
+import { emitPatientAdded } from '../../modules/queue/queue.socket';
 
 /**
  * Servicio de integración con el tótem.
- * AGENTS.md §35: Aísla todos los detalles del tótem fuera de los módulos internos.
- * AGENTS.md §25: Garantiza idempotencia usando sourceRecordId.
- *
- * Este servicio es el ÚNICO punto de entrada de datos del tótem al nuevo sistema.
- * Cualquier cambio en la estructura del tótem solo afecta a este archivo.
+ * Guarda al paciente en la colección 'patients' con su esquema completo
+ * y lo agrega a la cola de espera 'queueentries'.
  */
 export class TotemIntegrationService {
 
-  /**
-   * Procesa un registro de paciente llegado desde el tótem.
-   * Busca el profesional por nombre (mapeo tótem → ID interno),
-   * luego crea la entrada en la cola con idempotencia garantizada.
-   *
-   * Flujo (AGENTS.md §10):
-   * Tótem → Integración → QueueService → MongoDB → Socket.IO → Profesional
-   */
   async processTotemPatient(record: TotemPatientRecord): Promise<void> {
     try {
       logger.info(`[TotemIntegration] Procesando paciente del tótem: ${record._id}`);
 
+      // 1. Guardar/actualizar en la colección patients con el modelo idéntico
+      await Patient.findOneAndUpdate(
+        { dni: record.dni },
+        {
+          $set: {
+            dni: record.dni,
+            nombre: record.nombre,
+            apellido: record.apellido,
+            telefono: record.telefono,
+            fechaNacimiento: record.fechaNacimiento,
+            obraSocial: record.obraSocial,
+            numeroAfiliado: record.numeroAfiliado,
+            profesional: record.profesional,
+            localidad: record.localidad,
+            domicilio: record.domicilio,
+            observacion: record.observacion ?? [],
+            createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+          },
+        },
+        { upsert: true, new: true }
+      );
+      logger.info(`[TotemIntegration] Paciente guardado en colección 'patients': ${record.dni}`);
+
       if (!record.profesional) {
-        logger.warn(`[TotemIntegration] Registro sin profesional, ignorado: ${record._id}`);
+        logger.warn(`[TotemIntegration] Registro sin profesional, no se agrega a la cola: ${record._id}`);
         return;
       }
 
@@ -62,7 +73,7 @@ export class TotemIntegrationService {
         sourceRecordId: record._id,
       });
 
-      // Emitir DESPUÉS de persistir (AGENTS.md §22)
+      // Emitir evento por sockets
       emitPatientAdded(entry);
 
       logger.info(`[TotemIntegration] Entrada creada en cola: ${entry._id}`);

@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const mongoose = require('mongoose');
@@ -9,6 +9,45 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// URL del backend del nuevo sistema (configurable por entorno)
+const TURNERO_API_URL = process.env.TURNERO_API_URL || 'http://localhost:4000';
+
+/**
+ * Notifica al backend del nuevo sistema (turnero) que un paciente llegó al tótem.
+ * Fire-and-forget: si el servidor del turnero no está disponible, el tótem sigue funcionando.
+ * El backend del turnero es idempotente (ignora duplicados por sourceRecordId).
+ *
+ * @param {object} turno - Documento de turno recién guardado en MongoDB.
+ * @param {object} patientData - Datos adicionales del paciente si los hubiera.
+ */
+async function notifyTurneroApi(turno) {
+  const endpoint = `${TURNERO_API_URL}/api/v1/integrations/totem/patient`;
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        _id: turno._id.toString(),
+        dni: turno.pacienteDni,
+        nombre: turno.pacienteNombre,
+        apellido: turno.pacienteApellido,
+        obraSocial: turno.obraSocial,
+        profesional: turno.profesional,
+        createdAt: turno.creadoEn || turno.createdAt,
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      console.warn(`[Turnero] El backend respondió con error ${response.status}:`, body);
+    } else {
+      console.log('[Turnero] Paciente notificado al backend del nuevo sistema OK.');
+    }
+  } catch (err) {
+    // No bloquear el flujo del tótem si el backend no está disponible
+    console.warn('[Turnero] No se pudo notificar al backend del nuevo sistema:', err.message);
+  }
+}
 
 // ÔöÇÔöÇ WebSocket Server ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 const wss = new WebSocket.Server({ server });
@@ -116,8 +155,12 @@ app.post('/api/turnos', async (req, res) => {
       estado: 'esperando'
     });
 
-    // Notificar en tiempo real a todos los odont├│logos conectados
+    // Notificar en tiempo real a todos los odontólogos conectados (WebSocket)
     broadcast({ tipo: 'turno:nuevo', turno });
+
+    // Notificar al backend del nuevo sistema (turnero) — fire-and-forget
+    // No se awaita para no bloquear la respuesta al tótem.
+    notifyTurneroApi(turno).catch(() => {}); // el error ya se loguea dentro de la función
 
     res.status(201).json({ message: 'Turno creado', data: turno });
   } catch (error) {

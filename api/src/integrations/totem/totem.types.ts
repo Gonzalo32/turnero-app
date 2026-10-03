@@ -1,18 +1,20 @@
-/**
- * Tipos del sistema del tótem (sistema externo/legado).
- * AGENTS.md §35: La integración con el tótem está aislada en este módulo.
- *
- * Estos tipos representan la estructura de datos del tótem tal como es,
- * sin contaminar los módulos internos del nuevo sistema.
+﻿/**
+ * Tipos del sistema del tótem (odonto-app).
+ * Refleja exactamente la estructura del modelo Patient.
  */
 export interface TotemPatientRecord {
   _id: string;
   dni: string;
   nombre: string;
   apellido: string;
-  obraSocial?: string;
-  profesional?: string;
   telefono?: string;
+  fechaNacimiento?: string;
+  obraSocial?: string;
+  numeroAfiliado?: string;
+  profesional?: string;
+  localidad?: string;
+  domicilio?: string;
+  observacion?: any[];
   createdAt?: string;
 }
 
