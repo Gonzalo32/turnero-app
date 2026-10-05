@@ -37,6 +37,11 @@ export class LoginComponent implements OnInit {
   readonly professionalFullName = professionalFullName;
 
   async ngOnInit(): Promise<void> {
+    if (this.session.isLoggedIn) {
+      this.router.navigate(['/dashboard/pacientes']);
+      return;
+    }
+
     try {
       const res = await firstValueFrom(
         this.http.get<ApiResponse<Professional[]>>(`${environment.apiUrl}/professionals`)

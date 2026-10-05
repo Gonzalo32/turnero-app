@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { logger } from '../utils/logger';
@@ -16,6 +16,9 @@ export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
   private professionalRoom: string | null = null;
 
+  /** Estado de conexión reactivo */
+  readonly connected = signal<boolean>(false);
+
   /** Conecta al servidor Socket.IO */
   connect(): void {
     if (this.socket?.connected) return;
@@ -29,6 +32,7 @@ export class SocketService implements OnDestroy {
 
     this.socket.on('connect', () => {
       logger.debug('[SocketService] Conectado:', this.socket?.id);
+      this.connected.set(true);
       // Reconectar a la sala del profesional si había una sesión activa
       if (this.professionalRoom) {
         this.joinProfessionalRoom(this.professionalRoom);
@@ -37,10 +41,12 @@ export class SocketService implements OnDestroy {
 
     this.socket.on('disconnect', (reason) => {
       logger.warn('[SocketService] Desconectado:', reason);
+      this.connected.set(false);
     });
 
     this.socket.on('connect_error', (err) => {
       logger.error('[SocketService] Error de conexión:', err.message);
+      this.connected.set(false);
     });
   }
 
@@ -50,6 +56,7 @@ export class SocketService implements OnDestroy {
       this.socket.disconnect();
       this.socket = null;
       this.professionalRoom = null;
+      this.connected.set(false);
     }
   }
 

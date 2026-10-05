@@ -1,15 +1,7 @@
-import { Server as SocketIOServer } from 'socket.io';
-import { IQueueEntry } from './queue.model';
+﻿import { Server as SocketIOServer } from 'socket.io';
+import { IPatient } from '../patients/patient.model';
 import { QUEUE_EVENTS } from './queue.types';
 import { logger } from '../../utils/logger';
-
-/**
- * Eventos Socket.IO para el módulo queue.
- *
- * Regla (AGENTS.md §22): Socket.IO notifica DESPUÉS de que MongoDB confirma la persistencia.
- * Regla (AGENTS.md §23): Socket.IO comunica, MongoDB almacena.
- * Regla (AGENTS.md §26): Nombres de eventos claros y consistentes.
- */
 
 let io: SocketIOServer | null = null;
 
@@ -19,10 +11,6 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
   io.on('connection', (socket) => {
     logger.info(`[Socket] Cliente conectado: ${socket.id}`);
 
-    /**
-     * El cliente puede unirse a una sala por profesionalId.
-     * Así solo recibe eventos relevantes para su profesional.
-     */
     socket.on('queue:join-professional', (professionalId: string) => {
       socket.join(`professional:${professionalId}`);
       logger.debug(`[Socket] ${socket.id} se unió a sala professional:${professionalId}`);
@@ -38,64 +26,93 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
   });
 }
 
-/** Emite que un paciente fue agregado a la cola */
-export function emitPatientAdded(entry: IQueueEntry): void {
+export function emitPatientAdded(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  // Emitir al profesional específico y al room global
-  io.to(`professional:${entry.professionalId}`).emit(QUEUE_EVENTS.PATIENT_ADDED, payload);
+  if (entry.profesionalId || entry.professionalId) {
+    const profId = (entry.profesionalId || entry.professionalId).toString();
+    io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_ADDED, payload);
+  }
   io.emit(QUEUE_EVENTS.PATIENT_ADDED, payload);
   logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_ADDED} emitido: ${entry._id}`);
 }
 
-/** Emite que un paciente fue llamado */
-export function emitPatientCalled(entry: IQueueEntry): void {
+export function emitPatientCalled(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  io.to(`professional:${entry.professionalId}`).emit(QUEUE_EVENTS.PATIENT_CALLED, payload);
+  if (entry.profesionalId || entry.professionalId) {
+    const profId = (entry.profesionalId || entry.professionalId).toString();
+    io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_CALLED, payload);
+  }
+  io.emit(QUEUE_EVENTS.PATIENT_CALLED, payload);
   logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CALLED} emitido: ${entry._id}`);
 }
 
-/** Emite que un paciente inició atención */
-export function emitPatientStarted(entry: IQueueEntry): void {
+export function emitPatientStarted(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  io.to(`professional:${entry.professionalId}`).emit(QUEUE_EVENTS.PATIENT_STARTED, payload);
+  if (entry.profesionalId || entry.professionalId) {
+    const profId = (entry.profesionalId || entry.professionalId).toString();
+    io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_STARTED, payload);
+  }
+  io.emit(QUEUE_EVENTS.PATIENT_STARTED, payload);
   logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_STARTED} emitido: ${entry._id}`);
 }
 
-/** Emite que un paciente completó su atención */
-export function emitPatientCompleted(entry: IQueueEntry): void {
+export function emitPatientCompleted(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  io.to(`professional:${entry.professionalId}`).emit(QUEUE_EVENTS.PATIENT_COMPLETED, payload);
+  if (entry.profesionalId || entry.professionalId) {
+    const profId = (entry.profesionalId || entry.professionalId).toString();
+    io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_COMPLETED, payload);
+  }
+  io.emit(QUEUE_EVENTS.PATIENT_COMPLETED, payload);
   logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_COMPLETED} emitido: ${entry._id}`);
 }
 
-/** Emite que una entrada fue cancelada */
-export function emitPatientCancelled(entry: IQueueEntry): void {
+export function emitPatientCancelled(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  io.to(`professional:${entry.professionalId}`).emit(QUEUE_EVENTS.PATIENT_CANCELLED, payload);
+  if (entry.profesionalId || entry.professionalId) {
+    const profId = (entry.profesionalId || entry.professionalId).toString();
+    io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_CANCELLED, payload);
+  }
+  io.emit(QUEUE_EVENTS.PATIENT_CANCELLED, payload);
   logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CANCELLED} emitido: ${entry._id}`);
 }
 
-/**
- * Sanitiza la entrada antes de emitirla por socket.
- * Principio de mínima exposición (AGENTS.md §58):
- * no enviar más datos de los necesarios para actualizar la UI.
- */
-function sanitizeEntry(entry: IQueueEntry): object {
+function sanitizeEntry(entry: IPatient | any): object {
+  const p = entry.toObject ? entry.toObject() : entry;
+  const nombre = p.nombre || p.patientFirstName || '';
+  const apellido = p.apellido || p.patientLastName || '';
+  const dni = p.dni || p.patientDni || '';
+  const obraSocial = p.obraSocial || p.healthInsurance || 'Particular';
+  const profId = p.profesionalId || p.professionalId;
+  const estado = p.estado || p.status || 'WAITING';
+
   return {
-    _id: entry._id,
-    patientFirstName: entry.patientFirstName,
-    patientLastName: entry.patientLastName,
-    professionalId: entry.professionalId,
-    status: entry.status,
-    joinedAt: entry.joinedAt,
-    calledAt: entry.calledAt,
-    attentionStartedAt: entry.attentionStartedAt,
-    completedAt: entry.completedAt,
-    cancelledAt: entry.cancelledAt,
+    _id: p._id,
+    dni,
+    nombre,
+    apellido,
+    obraSocial,
+    profesional: p.profesional,
+    profesionalId: profId,
+    estado,
+    status: estado,
+    totalVisitas: p.totalVisitas || 1,
+    cambiosProfesional: p.cambiosProfesional || [],
+    visitas: p.visitas || [],
+    // Compatibilidad
+    patientFirstName: nombre,
+    patientLastName: apellido,
+    patientDni: dni,
+    healthInsurance: obraSocial,
+    professionalId: profId,
+    joinedAt: p.joinedAt || p.createdAt,
+    calledAt: p.calledAt,
+    attentionStartedAt: p.attentionStartedAt,
+    completedAt: p.completedAt,
+    cancelledAt: p.cancelledAt,
   };
 }

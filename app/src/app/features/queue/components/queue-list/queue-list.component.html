@@ -1,6 +1,6 @@
-<!-- ══════════════════════════════════════════════
+﻿<!-- ══════════════════════════════════════════════════════════════════════════════
      HEADER DE LA SECCIÓN
-══════════════════════════════════════════════ -->
+══════════════════════════════════════════════════════════════════════════════ -->
 <div class="section-header">
   <div class="section-title-group">
     <h2 class="section-title">Cola de Pacientes</h2>
@@ -22,9 +22,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════════════════════════
      ESTADO VACÍO
-══════════════════════════════════════════════ -->
+══════════════════════════════════════════════════════════════════════════════ -->
 <div class="empty-state" *ngIf="totalWaiting() === 0">
   <div class="empty-icon">
     <svg width="72" height="72" viewBox="0 0 80 80" fill="none">
@@ -41,17 +41,17 @@
   <p class="empty-sub">Cuando un paciente llegue al tótem, aparecerá aquí automáticamente.</p>
 </div>
 
-<!-- ══════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════════════════════════
      LISTA DE TARJETAS
-══════════════════════════════════════════════ -->
+══════════════════════════════════════════════════════════════════════════════ -->
 <div class="queue-list" *ngIf="totalWaiting() > 0">
   <div
     class="queue-card"
     *ngFor="let entry of entries(); trackBy: trackByEntryId; let i = index"
     [class.queue-card--new]="entry._id === lastNewEntryId()"
     [class.queue-card--urgent]="minutesWaiting(entry.joinedAt) >= 15"
-    [class.queue-card--called]="entry.status === QueueStatus.CALLED"
-    [class.queue-card--attending]="entry.status === QueueStatus.IN_ATTENTION"
+    [class.queue-card--called]="(entry.estado || entry.status) === QueueStatus.CALLED"
+    [class.queue-card--attending]="(entry.estado || entry.status) === QueueStatus.IN_ATTENTION"
     [id]="'entry-' + entry._id"
   >
     <!-- Número de orden -->
@@ -60,15 +60,18 @@
     <!-- Datos del paciente -->
     <div class="card-body">
       <div class="patient-name">
-        {{ entry.patientLastName | uppercase }}, {{ entry.patientFirstName }}
+        {{ (entry.apellido || entry.patientLastName) | uppercase }}, {{ entry.nombre || entry.patientFirstName }}
       </div>
       <div class="patient-chips">
-        <span class="chip chip--dni">DNI {{ entry.patientDni }}</span>
-        <span class="chip chip--insurance" [class.chip--particular]="entry.healthInsurance === 'Particular'">
-          {{ entry.healthInsurance }}
+        <span class="chip chip--dni">DNI {{ entry.dni || entry.patientDni }}</span>
+        <span class="chip chip--insurance" [class.chip--particular]="(entry.obraSocial || entry.healthInsurance) === 'Particular'">
+          {{ entry.obraSocial || entry.healthInsurance || 'Particular' }}
         </span>
-        <span class="chip chip--status" [class]="'chip--' + entry.status.toLowerCase()">
-          {{ statusLabel(entry.status) }}
+        <span class="chip chip--status" [class]="'chip--' + (entry.estado || entry.status || '').toLowerCase()">
+          {{ statusLabel(entry.estado || entry.status) }}
+        </span>
+        <span class="chip chip--visits" *ngIf="entry.totalVisitas && entry.totalVisitas > 1" title="Total de visitas registradas">
+          Visita #{{ entry.totalVisitas }}
         </span>
       </div>
     </div>

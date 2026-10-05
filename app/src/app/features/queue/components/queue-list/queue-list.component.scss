@@ -1,4 +1,4 @@
-:host {
+﻿:host {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -252,7 +252,14 @@
     border-color: #e0e7ff;
   }
 
-  &.chip--in_attention {
+      &.chip--visits {
+      background: #fdf2f8;
+      color: #be185d;
+      border: 1px solid #fbcfe8;
+      font-weight: 700;
+    }
+
+    &.chip--in_attention {
     background: #ecfdf5;
     color: #059669;
     border-color: #d1fae5;
@@ -365,3 +372,4 @@
   .card-actions { width: 100%; }
   .btn-done { flex: 1; justify-content: center; }
 }
+

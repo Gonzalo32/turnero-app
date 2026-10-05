@@ -1,7 +1,6 @@
-/**
+﻿/**
  * Estados centralizados de la cola (AGENTS.md §15).
  * Espejo del enum QueueStatus del backend.
- * Usar SIEMPRE este enum, nunca strings arbitrarios.
  */
 export enum QueueStatus {
   WAITING = 'WAITING',
@@ -17,20 +16,49 @@ export enum QueueSource {
   MANUAL = 'manual',
 }
 
+export interface VisitaItem {
+  numeroVisita: number;
+  fecha: string;
+  fechaStr?: string;
+  profesional?: string;
+  obraSocial?: string;
+  estado: string;
+  atendidoAt?: string;
+}
+
+export interface CambioProfesionalItem {
+  fecha: string;
+  fechaStr?: string;
+  profesionalAnterior: string;
+  profesionalNuevo: string;
+}
+
 /**
- * Entrada en la cola de espera.
- * Referencia al profesional por _id, nunca por nombre (AGENTS.md §51).
+ * Paciente en la cola de espera (espejo del modelo Patient en español).
  */
 export interface QueueEntry {
   _id: string;
-  patientFirstName: string;
-  patientLastName: string;
-  patientDni: string;
-  healthInsurance: string;
-  professionalId: string;
+  dni: string;
+  nombre: string;
+  apellido: string;
+  obraSocial: string;
+  profesional?: string;
+  profesionalId: string;
+  estado: QueueStatus;
   status: QueueStatus;
-  source: QueueSource;
-  sourceRecordId?: string;
+
+  // Historial
+  totalVisitas?: number;
+  visitas?: VisitaItem[];
+  cambiosProfesional?: CambioProfesionalItem[];
+
+  // Compatibilidad con campos anteriores
+  patientFirstName?: string;
+  patientLastName?: string;
+  patientDni?: string;
+  healthInsurance?: string;
+  professionalId?: string;
+
   joinedAt: string;
   calledAt?: string;
   attentionStartedAt?: string;
@@ -63,9 +91,13 @@ export const QUEUE_EVENTS = {
 
 /** DTO para agregar un paciente a la cola manualmente */
 export interface AddToQueueDto {
-  patientFirstName: string;
-  patientLastName: string;
-  patientDni: string;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  obraSocial?: string;
+  profesionalId: string;
+  patientFirstName?: string;
+  patientLastName?: string;
+  patientDni?: string;
   healthInsurance?: string;
-  professionalId: string;
 }

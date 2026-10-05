@@ -33,8 +33,8 @@ export class QueueService implements OnDestroy {
   /** Lista de profesionales (cargada desde API, no hardcodeada) */
   readonly professionals = signal<Professional[]>([]);
 
-  /** Estado de conexión Socket.IO */
-  readonly socketConnected = signal<boolean>(false);
+  /** Estado de conexión Socket.IO reactivo */
+  readonly socketConnected = this.socketService.connected;
 
   /** ID del último turno nuevo (para animaciones) */
   readonly lastNewEntryId = signal<string | null>(null);
@@ -138,7 +138,6 @@ export class QueueService implements OnDestroy {
   connectSocket(professionalId: string): void {
     this.socketService.connect();
     this.socketService.joinProfessionalRoom(professionalId);
-    this.socketConnected.set(this.socketService.isConnected);
 
     // Evento: paciente agregado
     const offAdded = this.socketService.on<QueueEntry>(
@@ -188,7 +187,6 @@ export class QueueService implements OnDestroy {
     this.socketCleanups.forEach(cleanup => cleanup());
     this.socketCleanups = [];
     this.socketService.leaveProfessionalRoom();
-    this.socketConnected.set(false);
   }
 
   // ── Helpers privados ──────────────────────────────────────────────────────

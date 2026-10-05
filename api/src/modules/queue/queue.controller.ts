@@ -42,9 +42,14 @@ export async function addToQueue(req: Request, res: Response, next: NextFunction
     };
 
     // 1. Persistir en MongoDB (AGENTS.md §22)
-    const entry = await queueService.addToQueue(dto);
+    const { entry, transferredFromProfId } = await queueService.addToQueue(dto);
 
-    // 2. DESPUÉS de confirmar persistencia, emitir evento Socket.IO
+    // 2. Si fue transferido de otro profesional, remover de su pantalla
+    if (transferredFromProfId) {
+      emitPatientCancelled({ ...(entry as any).toObject?.() ?? entry, professionalId: transferredFromProfId as any });
+    }
+
+    // 3. DESPUÉS de confirmar persistencia, emitir evento Socket.IO al nuevo profesional
     emitPatientAdded(entry);
 
     res.status(201).json({ success: true, data: entry, message: 'Paciente agregado a la cola' });
