@@ -4,12 +4,11 @@
 
 ```
 turnero-app/
-├── app/          ← FRONTEND  (Angular + TypeScript)
-├── api/          ← BACKEND   (Node.js + TypeScript + Socket.IO)
-├── docs/         ← Documentación (crear cuando sea necesario)
+├── frontend/     ← FRONTEND  (Angular + TypeScript)
+├── backend/      ← BACKEND   (Node.js + TypeScript + Socket.IO)
+├── docs/         ← Documentación (architecture.md, running.txt)
 ├── AGENTS.md     ← Reglas arquitectónicas obligatorias
-├── ESTRUCTURA.md ← Este archivo
-└── COMO_EJECUTAR.txt
+└── README.md
 ```
 
 ---
@@ -18,20 +17,20 @@ turnero-app/
 
 ```bash
 # Backend
-cd api && npm start
+cd backend && npm start
 
 # Frontend
-cd app && npm start
+cd frontend && npm start
 ```
 
 ---
 
-## FRONTEND — `app/`
+## FRONTEND — `frontend/`
 
 ### Estructura base
 
 ```
-app/src/app/
+frontend/src/app/
 │
 ├── core/                        # Servicios globales, singleton
 │   ├── models/
@@ -103,12 +102,12 @@ Luego registrarla en `dashboard.routes.ts` como hijo o en `app.routes.ts` si es 
 
 ---
 
-## BACKEND — `api/`
+## BACKEND — `backend/`
 
 ### Estructura base
 
 ```
-api/src/
+backend/src/
 │
 ├── config/
 │   └── env.ts                   # Variables de entorno tipadas y validadas

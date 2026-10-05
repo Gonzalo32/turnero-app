@@ -1,15 +1,14 @@
 ═══════════════════════════════════════════════════════════════
   CÓMO EJECUTAR — Sistema Odontológico Senza
-  Archivo: COMO_EJECUTAR.txt
+  Archivo: docs/running.txt
 ═══════════════════════════════════════════════════════════════
 
 ESTRUCTURA DEL PROYECTO
 ────────────────────────
   turnero-app/
-  ├── app/      ← FRONTEND  (Angular, TypeScript)
-  ├── api/      ← BACKEND   (Node.js, TypeScript, Socket.IO)
-  ├── server/   ← Legacy (no usar — solo referencia histórica)
-  └── COMO_EJECUTAR.txt
+  ├── frontend/ ← FRONTEND  (Angular, TypeScript)
+  ├── backend/  ← BACKEND   (Node.js, TypeScript, Socket.IO)
+  └── docs/     ← Documentación (este archivo)
 
 
 REQUISITOS PREVIOS
@@ -25,17 +24,17 @@ REQUISITOS PREVIOS
 
 1. Instalar dependencias del backend:
 
-      cd api
+      cd backend
       npm install
 
 2. Instalar dependencias del frontend:
 
-      cd app
+      cd frontend
       npm install
 
 3. Cargar los profesionales en la base de datos:
 
-      cd api
+      cd backend
       npm run seed
 
    Crea los 14 profesionales en MongoDB (senza_sistema).
@@ -48,7 +47,7 @@ REQUISITOS PREVIOS
 
 TERMINAL 1 — Backend (API)
 ──────────────────────────
-      cd api
+      cd backend
       npm start
 
   El servidor arranca en: http://localhost:3001
@@ -57,7 +56,7 @@ TERMINAL 1 — Backend (API)
 
 TERMINAL 2 — Frontend (App)
 ────────────────────────────
-      cd app
+      cd frontend
       npm start
 
   La app Angular abre en: http://localhost:4300
@@ -68,13 +67,13 @@ TERMINAL 2 — Frontend (App)
   QUÉ HACE CADA COMANDO
 ═══════════════════════════════════════════════════════════════
 
-  Desde api/:
-    npm run dev     → Inicia el servidor en modo desarrollo (hot-reload)
-    npm run start   → Inicia el servidor desde dist/ compilado (producción)
-    npm run build   → Compila el backend TypeScript a dist/
-    npm run seed    → Carga los 14 profesionales en MongoDB (1 sola vez)
+  Desde backend/:
+    npm run start       → Inicia el servidor en modo desarrollo (hot-reload)
+    npm run start:prod  → Inicia el servidor desde dist/ compilado (producción)
+    npm run build       → Compila el backend TypeScript a dist/
+    npm run seed        → Carga los 14 profesionales en MongoDB (1 sola vez)
 
-  Desde app/:
+  Desde frontend/:
     npm run start   → Inicia el frontend Angular en dev (puerto 4300)
     npm run build   → Compila el frontend para producción
 
@@ -101,7 +100,7 @@ TERMINAL 2 — Frontend (App)
 
 
 ═══════════════════════════════════════════════════════════════
-  VARIABLES DE ENTORNO (api/.env)
+  VARIABLES DE ENTORNO (backend/.env)
 ═══════════════════════════════════════════════════════════════
 
   PORT=3001
