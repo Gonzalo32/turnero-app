@@ -17,7 +17,7 @@
         class="nav-item"
         routerLink="/dashboard/pacientes"
         routerLinkActive="nav-item--active"
-        id="nav-pacientes"
+        id="nav-cola-espera"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -25,20 +25,16 @@
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <span>Pacientes</span>
+        <span>Cola de espera</span>
       </a>
     </nav>
     <!-- Spacer para empujar el footer hacia abajo -->
     <div class="sidebar-spacer"></div>
 
-    <!-- Profesional activo + logout -->
+    <!-- Profesional activo (iniciales) + logout -->
     <div class="sidebar-footer">
-      <div class="prof-badge">
+      <div class="prof-badge" [title]="professionalName() + ' — ' + office()">
         <div class="prof-avatar">{{ initials() }}</div>
-        <div class="prof-info">
-          <span class="prof-name">{{ professionalName() }}</span>
-          <span class="prof-office">{{ office() }}</span>
-        </div>
       </div>
       <button class="btn-logout" (click)="logout()" id="btn-logout" title="Cerrar sesión">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

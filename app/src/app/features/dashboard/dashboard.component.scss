@@ -97,68 +97,68 @@
   flex-shrink: 0;
 }
 
-.topbar-spacer { flex: 1; }
-
-.user-badge {
+// ── SIDEBAR FOOTER (Profesional + Logout) ──────
+.sidebar-footer {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.2rem 1.25rem 0.2rem;
+  border-top: 1px solid rgba(134, 99, 133, 0.12);
+  margin-top: auto;
 }
 
-.user-info {
+.prof-badge {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  cursor: default;
 }
 
-.user-name {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.user-office {
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  color: var(--color-brand-purple);
-  font-weight: 600;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
+.prof-avatar {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-purple-light));
+  background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-purple-dark));
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: white;
-  letter-spacing: 0.03em;
   font-family: var(--font-body);
-  box-shadow: 0 4px 10px rgba(134, 99, 133, 0.2);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 4px 12px rgba(134, 99, 133, 0.35);
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 16px rgba(134, 99, 133, 0.45);
+  }
 }
 
 .btn-logout {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: transparent;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 11px;
+  background: rgba(239, 68, 68, 0.05);
   border: 1px solid rgba(239, 68, 68, 0.2);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s;
-  margin-left: 0.5rem;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
     color: #ef4444;
+    transform: scale(1.04);
   }
 }
 

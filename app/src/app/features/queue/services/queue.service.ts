@@ -139,32 +139,39 @@ export class QueueService implements OnDestroy {
     this.socketService.connect();
     this.socketService.joinProfessionalRoom(professionalId);
 
-    // Evento: paciente agregado
+    // Evento: paciente agregado (aislado al profesional)
     const offAdded = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_ADDED,
       (entry) => {
-        // Solo agregar si es del profesional activo
-        if (entry.professionalId === professionalId) {
-          this.entries.update(list => {
-            // Evitar duplicados
-            if (list.some(e => e._id === entry._id)) return list;
-            this.triggerNewEntryAnimation(entry._id);
-            return [...list, entry];
-          });
-        }
+        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
+        if (entryProfId !== professionalId) return;
+
+        this.entries.update(list => {
+          if (list.some(e => e._id === entry._id)) return list;
+          this.triggerNewEntryAnimation(entry._id);
+          return [...list, entry];
+        });
       }
     );
 
     // Evento: paciente llamado → actualizar estado en lista
     const offCalled = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_CALLED,
-      (entry) => this.updateEntryInList(entry)
+      (entry) => {
+        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
+        if (entryProfId && entryProfId !== professionalId) return;
+        this.updateEntryInList(entry);
+      }
     );
 
     // Evento: atención iniciada → actualizar estado
     const offStarted = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_STARTED,
-      (entry) => this.updateEntryInList(entry)
+      (entry) => {
+        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
+        if (entryProfId && entryProfId !== professionalId) return;
+        this.updateEntryInList(entry);
+      }
     );
 
     // Evento: atención completada → remover de lista
@@ -179,7 +186,16 @@ export class QueueService implements OnDestroy {
       (entry) => this.entries.update(list => list.filter(e => e._id !== entry._id))
     );
 
-    this.socketCleanups = [offAdded, offCalled, offStarted, offCompleted, offCancelled];
+    // Sincronización continua de respaldo cada 15s con la base de datos
+    const syncInterval = setInterval(() => {
+      if (this.socketConnected()) {
+        this.loadQueue(professionalId);
+      }
+    }, 15000);
+
+    const cleanupInterval = () => clearInterval(syncInterval);
+
+    this.socketCleanups = [offAdded, offCalled, offStarted, offCompleted, offCancelled, cleanupInterval];
   }
 
   /** Desconecta Socket.IO limpiamente */

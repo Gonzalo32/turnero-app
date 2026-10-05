@@ -1,4 +1,4 @@
-﻿import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer } from 'socket.io';
 import { IPatient } from '../patients/patient.model';
 import { QUEUE_EVENTS } from './queue.types';
 import { logger } from '../../utils/logger';
@@ -29,56 +29,56 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
 export function emitPatientAdded(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  if (entry.profesionalId || entry.professionalId) {
-    const profId = (entry.profesionalId || entry.professionalId).toString();
+  const rawId = entry.profesionalId || entry.professionalId;
+  if (rawId) {
+    const profId = (rawId._id || rawId).toString();
     io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_ADDED, payload);
+    logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_ADDED} emitido exclusivamente a professional:${profId}`);
   }
-  io.emit(QUEUE_EVENTS.PATIENT_ADDED, payload);
-  logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_ADDED} emitido: ${entry._id}`);
 }
 
 export function emitPatientCalled(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  if (entry.profesionalId || entry.professionalId) {
-    const profId = (entry.profesionalId || entry.professionalId).toString();
+  const rawId = entry.profesionalId || entry.professionalId;
+  if (rawId) {
+    const profId = (rawId._id || rawId).toString();
     io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_CALLED, payload);
+    logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CALLED} emitido exclusivamente a professional:${profId}`);
   }
-  io.emit(QUEUE_EVENTS.PATIENT_CALLED, payload);
-  logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CALLED} emitido: ${entry._id}`);
 }
 
 export function emitPatientStarted(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  if (entry.profesionalId || entry.professionalId) {
-    const profId = (entry.profesionalId || entry.professionalId).toString();
+  const rawId = entry.profesionalId || entry.professionalId;
+  if (rawId) {
+    const profId = (rawId._id || rawId).toString();
     io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_STARTED, payload);
+    logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_STARTED} emitido exclusivamente a professional:${profId}`);
   }
-  io.emit(QUEUE_EVENTS.PATIENT_STARTED, payload);
-  logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_STARTED} emitido: ${entry._id}`);
 }
 
 export function emitPatientCompleted(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  if (entry.profesionalId || entry.professionalId) {
-    const profId = (entry.profesionalId || entry.professionalId).toString();
+  const rawId = entry.profesionalId || entry.professionalId;
+  if (rawId) {
+    const profId = (rawId._id || rawId).toString();
     io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_COMPLETED, payload);
+    logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_COMPLETED} emitido exclusivamente a professional:${profId}`);
   }
-  io.emit(QUEUE_EVENTS.PATIENT_COMPLETED, payload);
-  logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_COMPLETED} emitido: ${entry._id}`);
 }
 
 export function emitPatientCancelled(entry: IPatient | any): void {
   if (!io) return;
   const payload = sanitizeEntry(entry);
-  if (entry.profesionalId || entry.professionalId) {
-    const profId = (entry.profesionalId || entry.professionalId).toString();
+  const rawId = entry.profesionalId || entry.professionalId;
+  if (rawId) {
+    const profId = (rawId._id || rawId).toString();
     io.to(`professional:${profId}`).emit(QUEUE_EVENTS.PATIENT_CANCELLED, payload);
+    logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CANCELLED} emitido exclusivamente a professional:${profId}`);
   }
-  io.emit(QUEUE_EVENTS.PATIENT_CANCELLED, payload);
-  logger.debug(`[Socket] ${QUEUE_EVENTS.PATIENT_CANCELLED} emitido: ${entry._id}`);
 }
 
 function sanitizeEntry(entry: IPatient | any): object {
