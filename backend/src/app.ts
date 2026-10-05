@@ -9,6 +9,10 @@ import { initQueueSocket } from './modules/queue/queue.socket';
 import queueRoutes from './modules/queue/queue.routes';
 import professionalRoutes from './modules/professionals/professional.routes';
 import totemRoutes from './integrations/totem/totem.routes';
+import userRoutes from './modules/users/user.routes';
+import sedeRoutes from './modules/sedes/sede.routes';
+import { getMe } from './modules/users/user.controller';
+import { requireAuth } from './middlewares/auth.middleware';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -32,8 +36,12 @@ app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
 // ── Rutas API v1 ─────────────────────────────────────────────────────────────
-app.use('/api/v1/queue', queueRoutes);
-app.use('/api/v1/professionals', professionalRoutes);
+// Todas requieren access token de Keycloak (el tótem usa su propia API key, más abajo)
+app.get('/api/v1/auth/me', requireAuth, getMe);
+app.use('/api/v1/queue', requireAuth, queueRoutes);
+app.use('/api/v1/professionals', requireAuth, professionalRoutes);
+app.use('/api/v1/sedes', requireAuth, sedeRoutes);
+app.use('/api/v1/users', requireAuth, userRoutes);
 
 // ── Integración con el tótem ─────────────────────────────────────────────────
 app.use('/api/v1/integrations/totem', totemRoutes);

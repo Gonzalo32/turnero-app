@@ -6,6 +6,7 @@ import {
   startAttention,
   completeAttention,
   cancelEntry,
+  requireEntryAccess,
 } from './queue.controller';
 
 /**
@@ -13,6 +14,7 @@ import {
  * Prefijo: /api/v1/queue (versionado según AGENTS.md §42)
  */
 const router = Router();
+router.use('/:id', requireEntryAccess);
 
 /** Obtener cola activa (opcionalmente por profesional) */
 router.get('/', getQueue);

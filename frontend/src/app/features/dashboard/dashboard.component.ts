@@ -1,8 +1,9 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { SessionService } from '../../core/services/session.service';
 import { professionalFullName } from '../queue/models/queue.model';
+import { ROLE_LABELS } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,24 +14,26 @@ import { professionalFullName } from '../queue/models/queue.model';
 })
 export class DashboardComponent {
   private session = inject(SessionService);
-  private router = inject(Router);
 
-  readonly professional = this.session.professional;
+  readonly user = this.session.user;
   readonly office = this.session.office;
+  readonly isAdmin = computed(() => this.user()?.role === 'admin');
 
-  readonly professionalName = computed(() => {
-    const p = this.professional();
-    return p ? professionalFullName(p) : '';
+  /** Tooltip: usuario, rol, consultorio y profesional cuya cola se ve */
+  readonly badgeTitle = computed(() => {
+    const u = this.user();
+    if (!u) return '';
+    const p = this.session.professional();
+    return [`${u.firstName} ${u.lastName}`, ROLE_LABELS[u.role], this.office(), p ? `Cola: ${professionalFullName(p)}` : '']
+      .filter(Boolean).join(' — ');
   });
 
   readonly initials = computed(() => {
-    const p = this.professional();
-    if (!p) return '?';
-    return `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
+    const u = this.user();
+    return u ? `${u.firstName[0]}${u.lastName[0]}`.toUpperCase() : '?';
   });
 
   logout(): void {
     this.session.logout();
-    this.router.navigate(['/login']);
   }
 }

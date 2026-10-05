@@ -1,12 +1,11 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 /**
  * Modelo de Odontólogo / Profesional (Mongoose ORM).
  *
  * Regla AGENTS.md §17: Los profesionales se identifican por _id, nunca por su nombre.
  * Regla AGENTS.md §53: Eliminación lógica (activo: false).
- * Regla AGENTS.md §54: Nunca almacenar passwords en texto plano (bcrypt).
+ * Credenciales: viven en Keycloak; el vínculo usuario ↔ profesional está en `users.professionalId`.
  */
 export interface IProfessional extends Document {
   _id: Types.ObjectId;
@@ -16,7 +15,6 @@ export interface IProfessional extends Document {
   dni?: string;
   birthDate?: Date;
   email?: string;
-  password?: string;
   phone?: string;
   address?: string;
   specialty?: string;
@@ -25,8 +23,6 @@ export interface IProfessional extends Document {
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
-
-  comparePassword(candidate: string): Promise<boolean>;
 }
 
 const ProfessionalSchema = new Schema<IProfessional>(
@@ -37,7 +33,6 @@ const ProfessionalSchema = new Schema<IProfessional>(
     dni: { type: String, trim: true },
     birthDate: { type: Date },
     email: { type: String, trim: true, lowercase: true },
-    password: { type: String, select: false },
     phone: { type: String, trim: true },
     address: { type: String, trim: true },
     specialty: { type: String, trim: true, default: 'Odontología General' },
@@ -50,24 +45,6 @@ const ProfessionalSchema = new Schema<IProfessional>(
     versionKey: false,
   }
 );
-
-// Pre-save hook: Encriptar contraseña si fue modificada o provista
-ProfessionalSchema.pre('save', async function (next) {
-  if (!this.isModified('password') || !this.password) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (err: any) {
-    next(err);
-  }
-});
-
-// Método para verificar contraseña
-ProfessionalSchema.methods.comparePassword = async function (candidate: string): Promise<boolean> {
-  if (!this.password) return false;
-  return bcrypt.compare(candidate, this.password);
-};
 
 // Índices eficientes (AGENTS.md §48)
 ProfessionalSchema.index({ active: 1, lastName: 1 });

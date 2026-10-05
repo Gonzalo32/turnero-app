@@ -15,6 +15,7 @@ REQUISITOS PREVIOS
 ──────────────────
   - Node.js instalado
   - MongoDB corriendo localmente (puerto 27017)
+  - Docker (para Keycloak, puerto 8080)
   - Dos terminales abiertas al mismo tiempo
 
 
@@ -37,8 +38,23 @@ REQUISITOS PREVIOS
       cd backend
       npm run seed
 
-   Crea los 14 profesionales en MongoDB (senza_sistema).
+   Crea los 14 profesionales y la "Sede Central" en MongoDB (senza_sistema).
    No hace falta repetirlo a menos que reinstales la base.
+
+4. Levantar Keycloak (importa el realm `senza` desde keycloak/realm-senza.json):
+
+      docker compose up -d
+
+   Consola de Keycloak: http://localhost:8080  (admin / admin, realm master)
+
+5. Copiar el secreto del cliente `turnero-backend` a backend/.env:
+
+      Consola → realm senza → Clients → turnero-backend → Credentials
+      KEYCLOAK_ADMIN_CLIENT_SECRET=<ese valor>
+
+6. Primer ingreso a la app: usuario `admin`, contraseña temporal `CambiarEsto123`
+   (Keycloak obliga a cambiarla). Desde Administración → Usuarios se crean
+   los demás usuarios (odontólogos, secretarias) con contraseña temporal.
 
 
 ═══════════════════════════════════════════════════════════════
@@ -51,7 +67,7 @@ TERMINAL 1 — Backend (API)
       npm start
 
   El servidor arranca en: http://localhost:3001
-  Requiere que MongoDB esté corriendo antes.
+  Requiere que MongoDB y Keycloak estén corriendo antes.
 
 
 TERMINAL 2 — Frontend (App)
@@ -96,6 +112,11 @@ TERMINAL 2 — Frontend (App)
   GET  http://localhost:3001/api/v1/professionals     → Lista de profesionales
   GET  http://localhost:3001/api/v1/queue             → Cola activa
   POST http://localhost:3001/api/v1/queue             → Agregar paciente
+  GET  http://localhost:3001/api/v1/auth/me           → Usuario actual (rol, sede, profesional)
+  *    http://localhost:3001/api/v1/users             → ABM de usuarios (solo admin)
+  *    http://localhost:3001/api/v1/sedes             → Sedes (escritura solo admin)
+
+  Todo salvo /health y el tótem requiere `Authorization: Bearer <token de Keycloak>`.
 
   Endpoint para el tótem:
   POST http://localhost:3001/api/v1/integrations/totem/patient
@@ -111,4 +132,8 @@ TERMINAL 2 — Frontend (App)
   TOTEM_API_KEY=<clave compartida, igual en el tótem>
   CORS_ORIGIN=http://localhost:4300
   NODE_ENV=development
+  KEYCLOAK_URL=http://localhost:8080
+  KEYCLOAK_REALM=senza
+  KEYCLOAK_ADMIN_CLIENT_ID=turnero-backend
+  KEYCLOAK_ADMIN_CLIENT_SECRET=<secreto del cliente turnero-backend>   (obligatorio)
 

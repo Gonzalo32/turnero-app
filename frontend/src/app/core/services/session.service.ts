@@ -1,45 +1,65 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { KeycloakService } from 'keycloak-angular';
+import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api-response.model';
 import { Professional } from '../../features/queue/models/queue.model';
+import { AppUser, Role } from '../models/user.model';
 
 /**
- * Mantiene la sesión del profesional activo durante la navegación.
- * Al hacer login se guarda aquí; el dashboard lo consume.
+ * Sesión del usuario. La autenticación la resuelve Keycloak; acá vive:
+ * - `user`: el usuario del sistema (GET /auth/me) con su rol, sede y profesional vinculado.
+ * - `professional`: el profesional cuya cola se está viendo (propio o elegido por la secretaria).
+ * - `office`: el consultorio elegido al ingresar.
+ * Solo la selección (profesional/consultorio) se guarda en localStorage; nunca credenciales.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
-  readonly professional = signal<Professional | null>(this.getSavedProfessional());
-  readonly office = signal<string>(this.getSavedOffice());
+  private http = inject(HttpClient);
+  private keycloak = inject(KeycloakService);
 
-  private getSavedProfessional(): Professional | null {
+  readonly user = signal<AppUser | null>(null);
+  readonly professional = signal<Professional | null>(this.read('session_professional'));
+  readonly office = signal<string>(localStorage.getItem('session_office') || '');
+
+  private read<T>(key: string): T | null {
     try {
-      const saved = localStorage.getItem('session_professional');
+      const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   }
 
-  private getSavedOffice(): string {
-    return localStorage.getItem('session_office') || '';
+  /** Carga el usuario actual una sola vez. Lanza el error HTTP si no está habilitado. */
+  async loadUser(): Promise<AppUser> {
+    const current = this.user();
+    if (current) return current;
+    const res = await firstValueFrom(this.http.get<ApiResponse<AppUser>>(`${environment.apiUrl}/auth/me`));
+    this.user.set(res.data);
+    return res.data!;
   }
 
-  login(professional: Professional, office: string): void {
+  hasRole(role: Role): boolean {
+    return this.user()?.role === role;
+  }
+
+  selectWorkspace(professional: Professional | null, office: string): void {
     this.professional.set(professional);
     this.office.set(office);
-    localStorage.setItem('session_professional', JSON.stringify(professional));
-    localStorage.setItem('session_prof_id', professional._id);
+    if (professional) localStorage.setItem('session_professional', JSON.stringify(professional));
+    else localStorage.removeItem('session_professional');
     localStorage.setItem('session_office', office);
   }
 
-  logout(): void {
-    this.professional.set(null);
-    this.office.set('');
-    localStorage.removeItem('session_professional');
-    localStorage.removeItem('session_prof_id');
-    localStorage.removeItem('session_office');
+  get hasWorkspace(): boolean {
+    return this.office() !== '';
   }
 
-  get isLoggedIn(): boolean {
-    return this.professional() !== null;
+  logout(): void {
+    localStorage.removeItem('session_professional');
+    localStorage.removeItem('session_office');
+    this.keycloak.logout(window.location.origin);
   }
 }

@@ -2,9 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { professionalService } from './professional.service';
 
 /** GET /api/v1/professionals */
-export async function getProfessionals(_req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getProfessionals(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const professionals = await professionalService.getActiveProfessionals();
+    // Secretarias solo ven los profesionales de su sede; admin puede filtrar por ?sedeId=
+    const user = req.user!;
+    const sedeId = user.roles.includes('admin') ? (req.query['sedeId'] as string | undefined) : user.sedeId;
+    const professionals = await professionalService.getActiveProfessionals(sedeId);
     res.json({ success: true, data: professionals, message: null });
   } catch (err) {
     next(err);

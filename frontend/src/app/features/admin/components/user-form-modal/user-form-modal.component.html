@@ -1,0 +1,102 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-text">
+        <h3 class="modal-title">{{ isEditMode() ? 'Editar usuario' : 'Nuevo usuario' }}</h3>
+        <p class="modal-subtitle">
+          {{ isEditMode() ? 'Rol, sede y profesional vinculado' : 'Se crea en Keycloak con una contraseña temporal' }}
+        </p>
+      </div>
+      <button class="btn-close" (click)="onCancel()" title="Cerrar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+
+      <div class="form-error-alert" *ngIf="errorMessage()">
+        <span>{{ errorMessage() }}</span>
+      </div>
+
+      <!-- Datos personales -->
+      <div class="form-section">
+        <h4 class="section-heading">Datos personales</h4>
+        <div class="form-grid form-grid--2">
+          <div class="form-field">
+            <label class="field-label">Nombre <span class="required">*</span></label>
+            <input class="field-input" formControlName="firstName"
+              [class.field-input--error]="form.get('firstName')?.invalid && form.get('firstName')?.touched" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Apellido <span class="required">*</span></label>
+            <input class="field-input" formControlName="lastName"
+              [class.field-input--error]="form.get('lastName')?.invalid && form.get('lastName')?.touched" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" formControlName="email" placeholder="opcional" />
+        </div>
+      </div>
+
+      <!-- Acceso -->
+      <div class="form-section">
+        <h4 class="section-heading">Acceso al sistema</h4>
+        <div class="form-grid form-grid--2">
+          <div class="form-field">
+            <label class="field-label">Usuario <span class="required" *ngIf="!isEditMode()">*</span></label>
+            <input class="field-input" formControlName="username" autocomplete="off" placeholder="Ej: mchaparro"
+              [class.field-input--error]="form.get('username')?.invalid && form.get('username')?.touched" />
+            <span class="field-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
+              Mínimo 3 caracteres: letras, números, punto, guion.
+            </span>
+          </div>
+          <div class="form-field" *ngIf="!isEditMode()">
+            <label class="field-label">Contraseña temporal <span class="required">*</span></label>
+            <input type="password" class="field-input" formControlName="password" autocomplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+              [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched" />
+            <span class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+              Mínimo 8 caracteres. Se pedirá cambiarla en el primer ingreso.
+            </span>
+          </div>
+        </div>
+        <div class="form-grid form-grid--2">
+          <div class="form-field">
+            <label class="field-label">Rol <span class="required">*</span></label>
+            <select class="field-select" formControlName="role">
+              <option *ngFor="let r of roles" [value]="r[0]">{{ r[1] }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="field-label">Sede <span class="required" *ngIf="role !== 'admin'">*</span></label>
+            <select class="field-select" formControlName="sedeId">
+              <option value="">— Sin sede —</option>
+              <option *ngFor="let s of sedes()" [value]="s._id">{{ s.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field" *ngIf="role === 'odontologo'">
+          <label class="field-label">Profesional vinculado <span class="required">*</span></label>
+          <select class="field-select" formControlName="professionalId">
+            <option value="">— Seleccioná un profesional —</option>
+            <option *ngIf="!isEditMode()" [value]="NEW_PROFESSIONAL">+ Crear profesional con estos datos</option>
+            <option *ngFor="let p of professionals()" [value]="p._id">{{ p.lastName }}, {{ p.firstName }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="saving()">Cancelar</button>
+        <button type="submit" class="btn-submit" [disabled]="saving()">
+          <div class="btn-spinner" *ngIf="saving()"></div>
+          <span>{{ isEditMode() ? 'Guardar cambios' : 'Crear usuario' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
