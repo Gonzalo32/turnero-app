@@ -1,0 +1,136 @@
+<div class="table-container">
+
+  <!-- BARRA SUPERIOR: Buscador y Contador -->
+  <div class="table-toolbar" *ngIf="searchable()">
+    <div class="search-box">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        [placeholder]="searchPlaceholder()"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+      <button
+        *ngIf="searchTerm()"
+        class="search-clear"
+        (click)="searchTerm.set('')"
+        title="Limpiar búsqueda"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="record-counter">
+      <span class="counter-number">{{ filteredData().length }}</span>
+      <span class="counter-label">{{ countLabel() }}</span>
+    </div>
+  </div>
+
+  <!-- ESTADO DE CARGA -->
+  <div class="table-loading" *ngIf="loading()">
+    <div class="loading-spinner"></div>
+    <span>Cargando datos...</span>
+  </div>
+
+  <!-- TABLA PRINCIPAL -->
+  <div class="table-responsive" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th
+            *ngFor="let col of columns()"
+            [style.width]="col.width || 'auto'"
+            [style.text-align]="col.align || 'left'"
+          >
+            {{ col.header }}
+          </th>
+          <th *ngIf="actions().length > 0" class="actions-header" style="text-align: right; width: 60px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let row of filteredData()"
+          (click)="onRowClick(row)"
+          class="table-row"
+        >
+          <td
+            *ngFor="let col of columns()"
+            [style.text-align]="col.align || 'left'"
+          >
+            <!-- Caso Avatar -->
+            <div *ngIf="col.type === 'avatar'" class="cell-avatar-group">
+              <div class="cell-avatar-circle">
+                {{ getAvatarInitials(row, col) }}
+              </div>
+              <span class="cell-avatar-label">{{ getCellValue(row, col) }}</span>
+            </div>
+
+            <!-- Caso Badge -->
+            <span
+              *ngIf="col.type === 'badge'"
+              class="table-badge"
+              [ngClass]="getBadgeClass(row, col)"
+            >
+              {{ getCellValue(row, col) }}
+            </span>
+
+            <!-- Caso Texto normal / Fecha -->
+            <span *ngIf="col.type !== 'avatar' && col.type !== 'badge'" class="cell-text">
+              {{ getCellValue(row, col) }}
+            </span>
+          </td>
+
+          <!-- Acciones -->
+          <td *ngIf="actions().length > 0" class="actions-cell" style="text-align: right;">
+            <div class="actions-group">
+              <button
+                *ngFor="let act of actions()"
+                class="btn-table-action"
+                [class.btn-table-action--icon-only]="!act.label || !!act.icon"
+                [class.btn-table-action--danger]="act.variant === 'danger'"
+                [class.btn-table-action--primary]="act.variant === 'primary'"
+                (click)="onActionClick(act.id, row, $event)"
+                [title]="act.label || 'Editar'"
+              >
+                <!-- Icono de lápiz (edit) -->
+                <svg *ngIf="act.icon === 'edit' || act.id === 'edit'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                </svg>
+
+                <!-- Icono de eliminar (delete) -->
+                <svg *ngIf="act.icon === 'delete' || act.id === 'delete'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+
+                <span *ngIf="act.label && !act.icon">{{ act.label }}</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ESTADO VACÍO -->
+    <div class="table-empty" *ngIf="filteredData().length === 0">
+      <div class="empty-icon-box">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+      </div>
+      <p class="empty-title">{{ emptyMessage() }}</p>
+      <p class="empty-hint" *ngIf="searchTerm()">
+        Intenta con otro término de búsqueda.
+      </p>
+    </div>
+  </div>
+
+</div>

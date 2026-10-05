@@ -13,6 +13,11 @@ export const DASHBOARD_ROUTES: Routes = [
         path: 'pacientes',
         loadChildren: () =>
           import('../queue/queue.routes').then(m => m.QUEUE_ROUTES)
+      },
+      {
+        path: 'odontologos',
+        loadChildren: () =>
+          import('../professionals/professionals.routes').then(m => m.PROFESSIONALS_ROUTES)
       }
     ]
   }
