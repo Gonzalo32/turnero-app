@@ -33,8 +33,11 @@ function assertPassword(password: string | undefined): asserts password is strin
   }
 }
 
-async function validateRefs(role: Role, sedeId?: string, professionalId?: string, selfId?: string): Promise<void> {
+async function validateRefs(role: Role, sedeId?: string, professionalId?: string, selfId?: string, createProfessional = false): Promise<void> {
   if (!ROLES.includes(role)) throw createError(`Rol inválido: ${role}`, 400, 'VALIDATION_ERROR');
+  if (role === 'odontologo' && !professionalId && !createProfessional) {
+    throw createError('Un odontólogo debe tener un profesional vinculado', 400, 'VALIDATION_ERROR');
+  }
   if (role !== 'admin') {
     if (!sedeId || !Types.ObjectId.isValid(sedeId) || !(await Sede.exists({ _id: sedeId, active: true }))) {
       throw createError('Sede inválida', 400, 'VALIDATION_ERROR');
@@ -65,7 +68,7 @@ export class UserService {
       throw createError('Usuario, nombre y apellido son obligatorios', 400, 'VALIDATION_ERROR');
     }
     assertPassword(dto.password);
-    await validateRefs(dto.role, dto.sedeId, dto.professionalId);
+    await validateRefs(dto.role, dto.sedeId, dto.professionalId, undefined, dto.createProfessional);
 
     const kcInput = { username: dto.username.trim().toLowerCase(), email: dto.email?.trim() || undefined, firstName: dto.firstName.trim(), lastName: dto.lastName.trim() };
     const keycloakId = await keycloakAdmin.createUser(kcInput, dto.password);
