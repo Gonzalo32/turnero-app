@@ -18,6 +18,12 @@ export interface IQueueEntry extends Document {
   patientDni: string;
   healthInsurance: string;
 
+  /** Paciente del sistema al que pertenece la entrada */
+  patientId: Types.ObjectId;
+
+  /** Número de visita del paciente (histórico, se fija al crear la entrada) */
+  visitNumber: number;
+
   /** Referencia al profesional por ID (nunca por nombre string) */
   professionalId: Types.ObjectId;
 
@@ -47,6 +53,9 @@ const QueueEntrySchema = new Schema<IQueueEntry>(
     patientLastName: { type: String, required: true, trim: true },
     patientDni: { type: String, required: true, trim: true },
     healthInsurance: { type: String, default: 'Particular', trim: true },
+
+    patientId: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
+    visitNumber: { type: Number, default: 1 },
 
     professionalId: {
       type: Schema.Types.ObjectId,
@@ -82,7 +91,7 @@ const QueueEntrySchema = new Schema<IQueueEntry>(
 
 // Índices para consultas frecuentes (AGENTS.md §48)
 QueueEntrySchema.index({ professionalId: 1, status: 1, joinedAt: 1 });
-QueueEntrySchema.index({ patientDni: 1 });
+QueueEntrySchema.index({ patientId: 1, status: 1 });
 QueueEntrySchema.index({ sourceRecordId: 1 }, { sparse: true });
 
 export const QueueEntry = mongoose.model<IQueueEntry>('QueueEntry', QueueEntrySchema);

@@ -143,8 +143,7 @@ export class QueueService implements OnDestroy {
     const offAdded = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_ADDED,
       (entry) => {
-        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
-        if (entryProfId !== professionalId) return;
+        if (entry.professionalId !== professionalId) return;
 
         this.entries.update(list => {
           if (list.some(e => e._id === entry._id)) return list;
@@ -158,8 +157,7 @@ export class QueueService implements OnDestroy {
     const offCalled = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_CALLED,
       (entry) => {
-        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
-        if (entryProfId && entryProfId !== professionalId) return;
+        if (entry.professionalId !== professionalId) return;
         this.updateEntryInList(entry);
       }
     );
@@ -168,8 +166,7 @@ export class QueueService implements OnDestroy {
     const offStarted = this.socketService.on<QueueEntry>(
       QUEUE_EVENTS.PATIENT_STARTED,
       (entry) => {
-        const entryProfId = (entry.professionalId || (entry as any).profesionalId)?.toString();
-        if (entryProfId && entryProfId !== professionalId) return;
+        if (entry.professionalId !== professionalId) return;
         this.updateEntryInList(entry);
       }
     );

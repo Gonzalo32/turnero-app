@@ -117,18 +117,25 @@ backend/src/
 │
 ├── integrations/                # Sistemas externos (siempre aislados)
 │   └── totem/
-│       ├── totem.service.ts     # Único punto de entrada del tótem
+│       ├── totem.routes.ts      # POST /api/v1/integrations/totem/patient (clave x-totem-api-key)
+│       ├── totem.service.ts     # Traduce el registro del tótem → queueService.addToQueue
 │       └── totem.types.ts       # Tipos del sistema legado
 │
 ├── middlewares/
 │   └── error.middleware.ts      # Manejo centralizado de errores HTTP
 │
+├── migrations/
+│   └── queue-entries.migration.ts  # npm run migrate:queue (simulación; --apply escribe)
+│
 ├── modules/                     # Cada dominio tiene su módulo
+│   ├── patients/
+│   │   └── patient.model.ts     # Solo identidad (dni, nombre, apellido, origen)
+│   │
 │   ├── queue/                   # Módulo: Cola de espera
 │   │   ├── queue.controller.ts  # Lee request → llama service → responde HTTP
-│   │   ├── queue.model.ts       # Schema Mongoose
+│   │   ├── queue.model.ts       # QueueEntry: estado operativo de cada visita
 │   │   ├── queue.routes.ts      # Define rutas /api/v1/queue
-│   │   ├── queue.service.ts     # Toda la lógica de negocio
+│   │   ├── queue.service.ts     # Lógica de negocio; emite eventos después de persistir
 │   │   ├── queue.socket.ts      # Emisión de eventos Socket.IO
 │   │   └── queue.types.ts       # Interfaces, enums, DTOs
 │   │

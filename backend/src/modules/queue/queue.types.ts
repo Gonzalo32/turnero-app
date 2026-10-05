@@ -12,6 +12,9 @@ export enum QueueStatus {
   CANCELLED = 'CANCELLED',
 }
 
+/** Estados en los que una entrada sigue en la cola (no terminó) */
+export const ACTIVE_QUEUE_STATUSES = [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION];
+
 /** Fuentes de origen de una entrada en la cola */
 export enum QueueSource {
   TOTEM = 'totem',
@@ -36,10 +39,10 @@ export interface QueueEntryPublic {
   patientLastName: string;
   patientDni: string;
   healthInsurance: string;
+  patientId: Types.ObjectId | string;
   professionalId: Types.ObjectId | string;
   status: QueueStatus;
-  source: QueueSource;
-  sourceRecordId?: string;
+  visitNumber: number;
   joinedAt: Date;
   calledAt?: Date;
   attentionStartedAt?: Date;

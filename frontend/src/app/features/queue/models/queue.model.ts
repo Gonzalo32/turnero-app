@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Estados centralizados de la cola (AGENTS.md §15).
  * Espejo del enum QueueStatus del backend.
  */
@@ -16,48 +16,20 @@ export enum QueueSource {
   MANUAL = 'manual',
 }
 
-export interface VisitaItem {
-  numeroVisita: number;
-  fecha: string;
-  fechaStr?: string;
-  profesional?: string;
-  obraSocial?: string;
-  estado: string;
-  atendidoAt?: string;
-}
-
-export interface CambioProfesionalItem {
-  fecha: string;
-  fechaStr?: string;
-  profesionalAnterior: string;
-  profesionalNuevo: string;
-}
-
 /**
- * Paciente en la cola de espera (espejo del modelo Patient en español).
+ * Entrada de la cola de espera — espejo de QueueEntryPublic del backend.
  */
 export interface QueueEntry {
   _id: string;
-  dni: string;
-  nombre: string;
-  apellido: string;
-  obraSocial: string;
-  profesional?: string;
-  profesionalId: string;
-  estado: QueueStatus;
+  patientId: string;
+  patientFirstName: string;
+  patientLastName: string;
+  patientDni: string;
+  healthInsurance: string;
+  professionalId: string;
   status: QueueStatus;
-
-  // Historial
-  totalVisitas?: number;
-  visitas?: VisitaItem[];
-  cambiosProfesional?: CambioProfesionalItem[];
-
-  // Compatibilidad con campos anteriores
-  patientFirstName?: string;
-  patientLastName?: string;
-  patientDni?: string;
-  healthInsurance?: string;
-  professionalId?: string;
+  /** Número de visita del paciente */
+  visitNumber: number;
 
   joinedAt: string;
   calledAt?: string;
@@ -91,13 +63,9 @@ export const QUEUE_EVENTS = {
 
 /** DTO para agregar un paciente a la cola manualmente */
 export interface AddToQueueDto {
-  nombre: string;
-  apellido: string;
-  dni: string;
-  obraSocial?: string;
-  profesionalId: string;
-  patientFirstName?: string;
-  patientLastName?: string;
-  patientDni?: string;
+  patientFirstName: string;
+  patientLastName: string;
+  patientDni: string;
   healthInsurance?: string;
+  professionalId: string;
 }

@@ -50,8 +50,8 @@
     *ngFor="let entry of entries(); trackBy: trackByEntryId; let i = index"
     [class.queue-card--new]="entry._id === lastNewEntryId()"
     [class.queue-card--urgent]="minutesWaiting(entry.joinedAt) >= 15"
-    [class.queue-card--called]="(entry.estado || entry.status) === QueueStatus.CALLED"
-    [class.queue-card--attending]="(entry.estado || entry.status) === QueueStatus.IN_ATTENTION"
+    [class.queue-card--called]="entry.status === QueueStatus.CALLED"
+    [class.queue-card--attending]="entry.status === QueueStatus.IN_ATTENTION"
     [id]="'entry-' + entry._id"
   >
     <!-- Número de orden -->
@@ -60,18 +60,18 @@
     <!-- Datos del paciente -->
     <div class="card-body">
       <div class="patient-name">
-        {{ (entry.apellido || entry.patientLastName) | uppercase }}, {{ entry.nombre || entry.patientFirstName }}
+        {{ entry.patientLastName | uppercase }}, {{ entry.patientFirstName }}
       </div>
       <div class="patient-chips">
-        <span class="chip chip--dni">DNI {{ entry.dni || entry.patientDni }}</span>
-        <span class="chip chip--insurance" [class.chip--particular]="(entry.obraSocial || entry.healthInsurance) === 'Particular'">
-          {{ entry.obraSocial || entry.healthInsurance || 'Particular' }}
+        <span class="chip chip--dni">DNI {{ entry.patientDni }}</span>
+        <span class="chip chip--insurance" [class.chip--particular]="entry.healthInsurance === 'Particular'">
+          {{ entry.healthInsurance || 'Particular' }}
         </span>
-        <span class="chip chip--status" [class]="'chip--' + (entry.estado || entry.status || '').toLowerCase()">
-          {{ statusLabel(entry.estado || entry.status) }}
+        <span class="chip chip--status" [class]="'chip--' + entry.status.toLowerCase()">
+          {{ statusLabel(entry.status) }}
         </span>
-        <span class="chip chip--visits" *ngIf="entry.totalVisitas && entry.totalVisitas > 1" title="Total de visitas registradas">
-          Visita #{{ entry.totalVisitas }}
+        <span class="chip chip--visits" *ngIf="entry.visitNumber > 1" title="Número de visita del paciente">
+          Visita #{{ entry.visitNumber }}
         </span>
       </div>
     </div>

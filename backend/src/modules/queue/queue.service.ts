@@ -1,188 +1,156 @@
-﻿import { Types } from 'mongoose';
-import { Patient, IPatient } from '../patients/patient.model';
-import { QueueStatus, QueueSource, CreateQueueEntryDto } from './queue.types';
+import { Types } from 'mongoose';
+import { Patient } from '../patients/patient.model';
+import { QueueEntry, IQueueEntry } from './queue.model';
+import { QueueStatus, QueueSource, CreateQueueEntryDto, ACTIVE_QUEUE_STATUSES } from './queue.types';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
+import {
+  emitPatientAdded,
+  emitPatientCalled,
+  emitPatientStarted,
+  emitPatientCompleted,
+  emitPatientCancelled,
+} from './queue.socket';
+
+export interface AddToQueueResult {
+  entry: IQueueEntry;
+  /** false si el paciente ya estaba activo con el mismo profesional (idempotencia) */
+  created: boolean;
+  /** Entrada cancelada en otro profesional si el paciente fue transferido */
+  transferredFrom?: IQueueEntry;
+}
 
 export class QueueService {
 
-  async getActiveQueue(professionalId?: string): Promise<IPatient[]> {
-    const filter: Record<string, unknown> = {
-      $or: [
-        { estado: { $in: [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION] } },
-        { status: { $in: [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION] } },
-      ],
-    };
+  /** Cola activa ordenada por llegada; _id desempata (AGENTS.md §16) */
+  async getActiveQueue(professionalId?: string): Promise<IQueueEntry[]> {
+    const filter: Record<string, unknown> = { status: { $in: ACTIVE_QUEUE_STATUSES } };
 
     if (professionalId) {
       if (!Types.ObjectId.isValid(professionalId)) {
         throw createError('ID de profesional inválido', 400, 'INVALID_PROFESSIONAL_ID');
       }
-      filter['profesionalId'] = new Types.ObjectId(professionalId);
+      filter['professionalId'] = new Types.ObjectId(professionalId);
     }
 
-    return Patient
-      .find(filter)
-      .sort({ joinedAt: 1, createdAt: 1 });
+    return QueueEntry.find(filter).sort({ joinedAt: 1, _id: 1 });
   }
 
-  async addToQueue(dto: CreateQueueEntryDto): Promise<{ entry: IPatient; transferredFromProfId?: string }> {
+  /**
+   * Ingresa un paciente a la cola. Emite eventos solo después de persistir (AGENTS.md §22).
+   * - Crea o actualiza el paciente por DNI.
+   * - Si ya está activo con el mismo profesional, no duplica.
+   * - Si está activo con otro profesional, cancela esa entrada (transferencia).
+   */
+  async addToQueue(dto: CreateQueueEntryDto): Promise<AddToQueueResult> {
+    const dni = dto.patientDni?.trim();
+    const nombre = dto.patientFirstName?.trim();
+    const apellido = dto.patientLastName?.trim();
+    if (!dni || !nombre || !apellido) {
+      throw createError('DNI, nombre y apellido son requeridos', 400, 'INVALID_QUEUE_ENTRY');
+    }
     if (!Types.ObjectId.isValid(dto.professionalId)) {
       throw createError('ID de profesional inválido', 400, 'INVALID_PROFESSIONAL_ID');
     }
+    const professionalId = new Types.ObjectId(dto.professionalId);
+    const source = dto.source ?? QueueSource.MANUAL;
 
-    const dni = dto.patientDni || (dto as any).dni;
-    const nombre = dto.patientFirstName || (dto as any).nombre || '';
-    const apellido = dto.patientLastName || (dto as any).apellido || '';
-    const obraSocial = dto.healthInsurance || (dto as any).obraSocial || 'Particular';
+    const patient = await Patient.findOneAndUpdate(
+      { dni },
+      {
+        $set: { nombre, apellido },
+        $setOnInsert: dto.sourceRecordId ? { sourceSystem: source, sourcePatientId: dto.sourceRecordId } : {},
+      },
+      { upsert: true, new: true }
+    );
 
-    let existing = await Patient.findOne({ dni });
-    const ahora = new Date();
-    const fechaStr = `${ahora.getDate()}/${ahora.getMonth() + 1}/${ahora.getFullYear()} ${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-
-    if (existing) {
-      const currentProfId = existing.profesionalId ? existing.profesionalId.toString() : '';
-      let transferredFromProfId: string | undefined;
-
-      if (currentProfId && currentProfId !== dto.professionalId) {
-        logger.info(`[QueueService] Paciente transferido de ${currentProfId} a ${dto.professionalId}`);
-        transferredFromProfId = currentProfId;
-
-        // Registrar cambio de profesional
-        existing.cambiosProfesional = existing.cambiosProfesional || [];
-        existing.cambiosProfesional.push({
-          fecha: ahora,
-          fechaStr,
-          profesionalAnterior: existing.profesional || currentProfId,
-          profesionalNuevo: dto.professionalId,
-        });
-      }
-
-      const totalVisitas = (existing.totalVisitas || existing.visitas?.length || 1) + 1;
-      existing.totalVisitas = totalVisitas;
-
-      existing.visitas = existing.visitas || [];
-      existing.visitas.push({
-        numeroVisita: totalVisitas,
-        fecha: ahora,
-        fechaStr,
-        profesionalId: new Types.ObjectId(dto.professionalId),
-        obraSocial,
-        estado: QueueStatus.WAITING,
-      });
-
-      existing.profesionalId = new Types.ObjectId(dto.professionalId);
-      existing.estado = QueueStatus.WAITING;
-      existing.status = QueueStatus.WAITING;
-      existing.nombre = nombre || existing.nombre;
-      existing.apellido = apellido || existing.apellido;
-      existing.obraSocial = obraSocial || existing.obraSocial;
-      existing.joinedAt = ahora;
-      existing.calledAt = undefined;
-      existing.attentionStartedAt = undefined;
-      existing.completedAt = undefined;
-      existing.cancelledAt = undefined;
-
-      await existing.save();
-      return { entry: existing, transferredFromProfId };
+    // ponytail: chequeo en el service, no índice único; dos llegadas simultáneas del mismo paciente
+    // podrían duplicar. Agregar índice único parcial si ocurre en la práctica.
+    const active = await QueueEntry.findOne({ patientId: patient._id, status: { $in: ACTIVE_QUEUE_STATUSES } });
+    if (active && active.professionalId.equals(professionalId)) {
+      logger.info(`[QueueService] Paciente ${patient._id} ya activo con el profesional, ignorado (idempotencia)`);
+      return { entry: active, created: false };
     }
 
-    const newPatient = await Patient.create({
-      dni,
-      nombre,
-      apellido,
-      obraSocial,
-      profesionalId: new Types.ObjectId(dto.professionalId),
-      estado: QueueStatus.WAITING,
+    let transferredFrom: IQueueEntry | undefined;
+    if (active) {
+      active.status = QueueStatus.CANCELLED;
+      active.cancelledAt = new Date();
+      transferredFrom = await active.save();
+      emitPatientCancelled(transferredFrom);
+      logger.info(`[QueueService] Paciente ${patient._id} transferido de ${active.professionalId} a ${professionalId}`);
+    }
+
+    const previousVisits = await QueueEntry.countDocuments({ patientId: patient._id });
+    const entry = await QueueEntry.create({
+      patientId: patient._id,
+      patientFirstName: nombre,
+      patientLastName: apellido,
+      patientDni: dni,
+      healthInsurance: dto.healthInsurance?.trim() || 'Particular',
+      professionalId,
       status: QueueStatus.WAITING,
-      joinedAt: ahora,
-      totalVisitas: 1,
-      visitas: [
-        {
-          numeroVisita: 1,
-          fecha: ahora,
-          fechaStr,
-          profesionalId: new Types.ObjectId(dto.professionalId),
-          obraSocial,
-          estado: QueueStatus.WAITING,
-        }
-      ],
-      cambiosProfesional: [],
+      source,
+      sourceRecordId: dto.sourceRecordId,
+      visitNumber: previousVisits + 1,
+      joinedAt: new Date(),
     });
 
-    logger.info(`[QueueService] Paciente registrado en espera: ${newPatient._id}`);
-    return { entry: newPatient };
+    emitPatientAdded(entry);
+    logger.info(`[QueueService] Entrada creada: ${entry._id} (visita #${entry.visitNumber})`);
+    return { entry, created: true, transferredFrom };
   }
 
-  async callPatient(patientId: string): Promise<IPatient> {
-    const patient = await this.findPatient(patientId);
-    patient.estado = QueueStatus.CALLED;
-    patient.status = QueueStatus.CALLED;
-    patient.calledAt = new Date();
-    await patient.save();
-    logger.info(`[QueueService] Paciente llamado: ${patient._id}`);
-    return patient;
+  async callPatient(entryId: string): Promise<IQueueEntry> {
+    const entry = await this.findActiveEntry(entryId);
+    entry.status = QueueStatus.CALLED;
+    entry.calledAt = new Date();
+    const saved = await entry.save();
+    emitPatientCalled(saved);
+    return saved;
   }
 
-  async startAttention(patientId: string): Promise<IPatient> {
-    const patient = await this.findPatient(patientId);
-    patient.estado = QueueStatus.IN_ATTENTION;
-    patient.status = QueueStatus.IN_ATTENTION;
-    patient.attentionStartedAt = new Date();
-    await patient.save();
-    logger.info(`[QueueService] Atención iniciada: ${patient._id}`);
-    return patient;
+  async startAttention(entryId: string): Promise<IQueueEntry> {
+    const entry = await this.findActiveEntry(entryId);
+    entry.status = QueueStatus.IN_ATTENTION;
+    entry.attentionStartedAt = new Date();
+    const saved = await entry.save();
+    emitPatientStarted(saved);
+    return saved;
   }
 
-  async completeAttention(patientId: string): Promise<IPatient> {
-    const patient = await this.findPatient(patientId);
-    const ahora = new Date();
+  async completeAttention(entryId: string): Promise<IQueueEntry> {
+    const entry = await this.findActiveEntry(entryId);
+    entry.status = QueueStatus.COMPLETED;
+    entry.completedAt = new Date();
+    const saved = await entry.save();
+    emitPatientCompleted(saved);
+    return saved;
+  }
 
-    patient.estado = QueueStatus.COMPLETED;
-    patient.status = QueueStatus.COMPLETED;
-    patient.completedAt = ahora;
+  async cancelEntry(entryId: string): Promise<IQueueEntry> {
+    const entry = await this.findActiveEntry(entryId);
+    entry.status = QueueStatus.CANCELLED;
+    entry.cancelledAt = new Date();
+    const saved = await entry.save();
+    emitPatientCancelled(saved);
+    return saved;
+  }
 
-    // Actualizar la última visita en el historial
-    if (Array.isArray(patient.visitas) && patient.visitas.length > 0) {
-      const ultima = patient.visitas[patient.visitas.length - 1];
-      ultima.estado = QueueStatus.COMPLETED;
-      ultima.atendidoAt = ahora;
-      patient.markModified('visitas');
+  /** Las transiciones solo aplican a entradas que siguen en la cola */
+  private async findActiveEntry(entryId: string): Promise<IQueueEntry> {
+    if (!Types.ObjectId.isValid(entryId)) {
+      throw createError('ID de entrada inválido', 400, 'INVALID_QUEUE_ENTRY_ID');
     }
-
-    await patient.save();
-    logger.info(`[QueueService] Atención completada: ${patient._id}`);
-    return patient;
-  }
-
-  async cancelEntry(patientId: string): Promise<IPatient> {
-    const patient = await this.findPatient(patientId);
-    patient.estado = QueueStatus.CANCELLED;
-    patient.status = QueueStatus.CANCELLED;
-    patient.cancelledAt = new Date();
-
-    if (Array.isArray(patient.visitas) && patient.visitas.length > 0) {
-      const ultima = patient.visitas[patient.visitas.length - 1];
-      ultima.estado = QueueStatus.CANCELLED;
-      patient.markModified('visitas');
+    const entry = await QueueEntry.findById(entryId);
+    if (!entry) {
+      throw createError('Entrada de cola no encontrada', 404, 'QUEUE_ENTRY_NOT_FOUND');
     }
-
-    await patient.save();
-    logger.info(`[QueueService] Entrada cancelada: ${patient._id}`);
-    return patient;
-  }
-
-  private async findPatient(patientId: string): Promise<IPatient> {
-    if (!Types.ObjectId.isValid(patientId)) {
-      throw createError('ID de paciente inválido', 400, 'INVALID_PATIENT_ID');
+    if (!ACTIVE_QUEUE_STATUSES.includes(entry.status)) {
+      throw createError('La entrada ya no está en la cola', 409, 'QUEUE_ENTRY_NOT_ACTIVE');
     }
-    const patient = await Patient.findById(patientId);
-    if (!patient) {
-      throw createError('Paciente no encontrado', 404, 'PATIENT_NOT_FOUND');
-    }
-    return patient;
+    return entry;
   }
 }
 
 export const queueService = new QueueService();
-
