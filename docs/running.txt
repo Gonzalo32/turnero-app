@@ -106,6 +106,7 @@ TERMINAL 2 — Frontend (App)
   PORT=3001
   MONGODB_URI=mongodb://localhost:27017/senza_sistema
   TOTEM_MONGODB_URI=mongodb://localhost:27017/senza_totem
+  TOTEM_API_KEY=<clave compartida, igual en el tótem>
   CORS_ORIGIN=http://localhost:4300
   NODE_ENV=development
 

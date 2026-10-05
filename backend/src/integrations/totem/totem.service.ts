@@ -37,6 +37,18 @@ export class TotemIntegrationService {
 
       // Buscar si ya existía el paciente para registrar la visita y auditoría
       const existing = await Patient.findOne({ dni: record.dni });
+
+      // Idempotencia (AGENTS.md §25): el tótem puede reenviar el mismo registro.
+      // Si ya está activo en la cola del mismo profesional, no se crea otra visita.
+      const activeStatuses = [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION];
+      if (
+        existing &&
+        activeStatuses.includes(existing.status) &&
+        String(existing.profesionalId ?? '') === String(professionalId ?? '')
+      ) {
+        logger.info(`[TotemIntegration] Registro ${record._id} ya activo en cola, ignorado (idempotencia)`);
+        return;
+      }
       const ahora = new Date();
       const fechaStr = `${ahora.getDate()}/${ahora.getMonth() + 1}/${ahora.getFullYear()} ${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
 
@@ -124,6 +136,7 @@ export class TotemIntegrationService {
       logger.info(`[TotemIntegration] ✓ Paciente guardado en 'patients' (Visita #${totalVisitas}): ${patient.nombre} ${patient.apellido}`);
     } catch (error) {
       logger.error('[TotemIntegration] Error procesando paciente del tótem:', error);
+      throw error;
     }
   }
 }

@@ -8,7 +8,7 @@ import { errorMiddleware } from './middlewares/error.middleware';
 import { initQueueSocket } from './modules/queue/queue.socket';
 import queueRoutes from './modules/queue/queue.routes';
 import professionalRoutes from './modules/professionals/professional.routes';
-import { totemIntegrationService } from './integrations/totem/totem.service';
+import totemRoutes from './integrations/totem/totem.routes';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -35,20 +35,8 @@ app.use(express.json());
 app.use('/api/v1/queue', queueRoutes);
 app.use('/api/v1/professionals', professionalRoutes);
 
-// ── Endpoint de integración con el tótem ─────────────────────────────────────
-/**
- * POST /api/v1/integrations/totem/patient
- * El tótem llama este endpoint cuando un paciente finaliza el registro.
- * Internamente se delega a TotemIntegrationService (aislado y desacoplado).
- */
-app.post('/api/v1/integrations/totem/patient', async (req, res, next) => {
-  try {
-    await totemIntegrationService.processTotemPatient(req.body);
-    res.json({ success: true, data: null, message: 'Paciente procesado' });
-  } catch (err) {
-    next(err);
-  }
-});
+// ── Integración con el tótem ─────────────────────────────────────────────────
+app.use('/api/v1/integrations/totem', totemRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/v1/health', (_req, res) => {
