@@ -1,0 +1,32 @@
+# Producción: copiar este archivo, Caddyfile y un .env a ~/turnero en el servidor.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - turnero
+
+  turnero:
+    image: ghcr.io/gonzalo32/turnero-app:latest
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - mongo
+
+  # Sin "ports": MongoDB solo es accesible desde la red interna (AGENTS.md §54).
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  caddy-data:
+  mongo-data:

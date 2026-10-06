@@ -10,6 +10,7 @@ import queueRoutes from './modules/queue/queue.routes';
 import professionalRoutes from './modules/professionals/professional.routes';
 import totemRoutes from './integrations/totem/totem.routes';
 import mongoose from 'mongoose';
+import path from 'path';
 
 const app = express();
 
@@ -50,6 +51,14 @@ app.get('/api/v1/health', (_req, res) => {
     message: null,
   });
 });
+
+// ── Frontend estático (producción / Docker) ──────────────────────────────────
+// Si PUBLIC_DIR está definido, Express sirve el build de Angular en el mismo origen.
+const publicDir = process.env['PUBLIC_DIR'];
+if (publicDir) {
+  app.use(express.static(publicDir));
+  app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+}
 
 // ── Manejo centralizado de errores (debe ir al final) ────────────────────────
 app.use(errorMiddleware);
