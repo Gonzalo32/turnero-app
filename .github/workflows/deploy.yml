@@ -31,4 +31,4 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          script: cd ~/turnero && docker compose pull turnero && docker compose up -d
+          script: cd ~/turnero && docker compose pull && docker compose up -d

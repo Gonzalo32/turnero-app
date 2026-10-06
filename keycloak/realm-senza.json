@@ -2,11 +2,15 @@
   "realm": "senza",
   "enabled": true,
   "displayName": "Senza",
+  "sslRequired": "external",
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": false,
   "bruteForceProtected": true,
   "failureFactor": 5,
-  "passwordPolicy": "length(8)",
+  "permanentLockout": false,
+  "waitIncrementSeconds": 60,
+  "passwordPolicy": "length(10) and notUsername and passwordHistory(3)",
+  "revokeRefreshToken": true,
   "internationalizationEnabled": true,
   "supportedLocales": ["es"],
   "defaultLocale": "es",
@@ -28,12 +32,12 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
-      "rootUrl": "http://localhost:4300",
-      "redirectUris": ["http://localhost:4300/*"],
-      "webOrigins": ["http://localhost:4300"],
+      "rootUrl": "${TURNERO_PUBLIC_URL}",
+      "redirectUris": ["${TURNERO_PUBLIC_URL}/*"],
+      "webOrigins": ["${TURNERO_PUBLIC_URL}"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4300/*"
+        "post.logout.redirect.uris": "${TURNERO_PUBLIC_URL}/*"
       }
     },
     {
@@ -44,7 +48,8 @@
       "clientAuthenticatorType": "client-secret",
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true
+      "serviceAccountsEnabled": true,
+      "secret": "${KEYCLOAK_ADMIN_CLIENT_SECRET}"
     }
   ],
   "users": [
@@ -64,7 +69,7 @@
       "email": "admin@senza.local",
       "emailVerified": true,
       "realmRoles": ["admin"],
-      "credentials": [{ "type": "password", "value": "CambiarEsto123", "temporary": true }]
+      "credentials": [{ "type": "password", "value": "${KEYCLOAK_APP_ADMIN_PASSWORD}", "temporary": true }]
     }
   ]
 }

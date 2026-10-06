@@ -1,4 +1,24 @@
 # HTTPS automático (Let's Encrypt). DOMAIN se define en .env
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
 {$DOMAIN} {
+	import security_headers
+	header Content-Security-Policy "default-src 'self'; connect-src 'self' wss://{$DOMAIN} https://auth.{$DOMAIN}; frame-src https://auth.{$DOMAIN}; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 	reverse_proxy turnero:3001
+}
+
+# Keycloak: solo el realm de la app. La consola de administración y el realm master
+# no se publican (acceso por túnel SSH, ver deploy/docker-compose.yml).
+auth.{$DOMAIN} {
+	import security_headers
+	@internal path /admin* /realms/master*
+	respond @internal 404
+	reverse_proxy keycloak:8080
 }

@@ -47,10 +47,10 @@ REQUISITOS PREVIOS
 
    Consola de Keycloak: http://localhost:8080  (admin / admin, realm master)
 
-5. Copiar el secreto del cliente `turnero-backend` a backend/.env:
+5. En backend/.env, el secreto del cliente `turnero-backend` que importa
+   docker-compose.yml (por defecto en desarrollo):
 
-      Consola → realm senza → Clients → turnero-backend → Credentials
-      KEYCLOAK_ADMIN_CLIENT_SECRET=<ese valor>
+      KEYCLOAK_ADMIN_CLIENT_SECRET=dev-turnero-backend-secret
 
 6. Primer ingreso a la app: usuario `admin`, contraseña temporal `CambiarEsto123`
    (Keycloak obliga a cambiarla). Desde Administración → Usuarios se crean
@@ -133,6 +133,7 @@ TERMINAL 2 — Frontend (App)
   CORS_ORIGIN=http://localhost:4300
   NODE_ENV=development
   KEYCLOAK_URL=http://localhost:8080
+  KEYCLOAK_ISSUER=<opcional; por defecto KEYCLOAK_URL/realms/KEYCLOAK_REALM>
   KEYCLOAK_REALM=senza
   KEYCLOAK_ADMIN_CLIENT_ID=turnero-backend
   KEYCLOAK_ADMIN_CLIENT_SECRET=<secreto del cliente turnero-backend>   (obligatorio)
@@ -149,20 +150,38 @@ TERMINAL 2 — Frontend (App)
 
   Configuración inicial del servidor (una sola vez):
     1. VPS Ubuntu 24.04 → curl -fsSL https://get.docker.com | sh
-    2. DNS: registro A del dominio → IP del VPS
+    2. DNS: registros A de tu-dominio.com y auth.tu-dominio.com → IP del VPS
     3. ufw allow 22,80,443/tcp && ufw enable
-    4. Copiar deploy/docker-compose.yml y deploy/Caddyfile a ~/turnero
-    5. Crear ~/turnero/.env:
+    4. Copiar a ~/turnero: deploy/docker-compose.yml, deploy/Caddyfile
+       y keycloak/realm-senza.json
+    5. Crear ~/turnero/.env (cada secreto: openssl rand -hex 32):
          DOMAIN=tu-dominio.com
-         MONGODB_URI=mongodb://mongo:27017/senza_sistema
-         TOTEM_API_KEY=<openssl rand -hex 32>
-         JWT_SECRET=<openssl rand -hex 32>
          NODE_ENV=production
          PORT=3001
+         MONGODB_URI=mongodb://mongo:27017/senza_sistema
+         TOTEM_API_KEY=<secreto>
+         KEYCLOAK_ADMIN_CLIENT_SECRET=<secreto>
+         KEYCLOAK_DB_PASSWORD=<secreto>
+         KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME=<usuario consola Keycloak>
+         KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD=<secreto>
+         KEYCLOAK_APP_ADMIN_PASSWORD=<contraseña temporal del admin de la app>
+       (KEYCLOAK_URL, KEYCLOAK_ISSUER y CORS_ORIGIN los arma docker-compose.yml)
     6. Secrets del repo en GitHub: SSH_HOST, SSH_USER, SSH_KEY
     7. Paquete ghcr.io público, o en el VPS: docker login ghcr.io
     8. Primer deploy: push a master (o "Run workflow" en Actions)
     9. Seed (una vez): docker compose exec turnero node dist/seeds/seed.js
+   10. Primer ingreso en https://tu-dominio.com: usuario `admin` con
+       KEYCLOAK_APP_ADMIN_PASSWORD (Keycloak obliga a cambiarla).
+
+  Keycloak:
+    - El realm se importa SOLO la primera vez (si no existe). Cambios
+      posteriores al realm se hacen desde la consola de administración.
+    - La consola no está publicada en Internet. Acceso por túnel SSH:
+        ssh -L 8080:localhost:8080 usuario@vps
+        → http://localhost:8080/admin/  (KEYCLOAK_BOOTSTRAP_ADMIN_*)
+    - Rotar KEYCLOAK_ADMIN_CLIENT_SECRET: regenerarlo en la consola
+      (Clients → turnero-backend → Credentials), actualizar .env y
+      docker compose up -d turnero.
 
   El tótem debe apuntar a https://tu-dominio.com y enviar el header
   x-totem-api-key con el mismo valor de TOTEM_API_KEY.

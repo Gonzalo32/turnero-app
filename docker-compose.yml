@@ -1,5 +1,6 @@
 # Keycloak para desarrollo. Importa el realm `senza` al iniciar (solo si no existe).
 # Admin de Keycloak (consola master): http://localhost:8080  admin / admin
+# Los ${...} de keycloak/realm-senza.json se resuelven con el environment de abajo.
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -7,6 +8,10 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      TURNERO_PUBLIC_URL: http://localhost:4300
+      # Debe coincidir con KEYCLOAK_ADMIN_CLIENT_SECRET de backend/.env
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-dev-turnero-backend-secret}
+      KEYCLOAK_APP_ADMIN_PASSWORD: CambiarEsto123
     ports:
       - "8080:8080"
     volumes:

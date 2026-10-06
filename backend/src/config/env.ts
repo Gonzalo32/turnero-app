@@ -13,6 +13,9 @@ function requireEnv(key: string): string {
   return val;
 }
 
+const keycloakUrl = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8080';
+const keycloakRealm = process.env['KEYCLOAK_REALM'] ?? 'senza';
+
 export const config = {
   port: parseInt(process.env['PORT'] ?? '3001', 10),
   nodeEnv: process.env['NODE_ENV'] ?? 'development',
@@ -21,8 +24,11 @@ export const config = {
   totemApiKey: requireEnv('TOTEM_API_KEY'),
   totemMongodbUri: process.env['TOTEM_MONGODB_URI'] ?? '',
   keycloak: {
-    url: process.env['KEYCLOAK_URL'] ?? 'http://localhost:8080',
-    realm: process.env['KEYCLOAK_REALM'] ?? 'senza',
+    /** URL desde el backend (en Docker: red interna, http://keycloak:8080) */
+    url: keycloakUrl,
+    realm: keycloakRealm,
+    /** `iss` de los tokens: la URL pública de Keycloak, que difiere de `url` en producción */
+    issuer: process.env['KEYCLOAK_ISSUER'] ?? `${keycloakUrl}/realms/${keycloakRealm}`,
     adminClientId: process.env['KEYCLOAK_ADMIN_CLIENT_ID'] ?? 'turnero-backend',
     adminClientSecret: requireEnv('KEYCLOAK_ADMIN_CLIENT_SECRET'),
   },
