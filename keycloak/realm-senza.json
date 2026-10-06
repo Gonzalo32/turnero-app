@@ -1,0 +1,70 @@
+{
+  "realm": "senza",
+  "enabled": true,
+  "displayName": "Senza",
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "passwordPolicy": "length(8)",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["es"],
+  "defaultLocale": "es",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 36000,
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Administra usuarios y sedes" },
+      { "name": "odontologo", "description": "Profesional: ve su propia cola" },
+      { "name": "secretaria", "description": "Gestiona las colas de los profesionales de su sede" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "turnero-frontend",
+      "name": "Turnero (Angular)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "rootUrl": "http://localhost:4300",
+      "redirectUris": ["http://localhost:4300/*"],
+      "webOrigins": ["http://localhost:4300"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4300/*"
+      }
+    },
+    {
+      "clientId": "turnero-backend",
+      "name": "Turnero backend (Admin API)",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-turnero-backend",
+      "enabled": true,
+      "serviceAccountClientId": "turnero-backend",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-users", "view-realm"]
+      }
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Administrador",
+      "lastName": "Senza",
+      "email": "admin@senza.local",
+      "emailVerified": true,
+      "realmRoles": ["admin"],
+      "credentials": [{ "type": "password", "value": "CambiarEsto123", "temporary": true }]
+    }
+  ]
+}

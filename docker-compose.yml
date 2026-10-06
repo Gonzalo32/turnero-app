@@ -1,0 +1,17 @@
+# Keycloak para desarrollo. Importa el realm `senza` al iniciar (solo si no existe).
+# Admin de Keycloak (consola master): http://localhost:8080  admin / admin
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-senza.json:/opt/keycloak/data/import/realm-senza.json:ro
+      - keycloak-data:/opt/keycloak/data
+
+volumes:
+  keycloak-data:

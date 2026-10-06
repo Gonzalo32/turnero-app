@@ -20,7 +20,12 @@ export const config = {
   mongodbUri: requireEnv('MONGODB_URI'),
   totemApiKey: requireEnv('TOTEM_API_KEY'),
   totemMongodbUri: process.env['TOTEM_MONGODB_URI'] ?? '',
-  jwtSecret: process.env['JWT_SECRET'] ?? 'dev_secret_inseguro',
+  keycloak: {
+    url: process.env['KEYCLOAK_URL'] ?? 'http://localhost:8080',
+    realm: process.env['KEYCLOAK_REALM'] ?? 'senza',
+    adminClientId: process.env['KEYCLOAK_ADMIN_CLIENT_ID'] ?? 'turnero-backend',
+    adminClientSecret: requireEnv('KEYCLOAK_ADMIN_CLIENT_SECRET'),
+  },
 } as const;
 
 export const isDev = config.nodeEnv === 'development';

@@ -1,4 +1,5 @@
-import { Injectable, OnDestroy, signal } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { KeycloakService } from 'keycloak-angular';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { logger } from '../utils/logger';
@@ -15,6 +16,7 @@ import { logger } from '../utils/logger';
 export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
   private professionalRoom: string | null = null;
+  private keycloak = inject(KeycloakService);
 
   /** Estado de conexión reactivo */
   readonly connected = signal<boolean>(false);
@@ -25,6 +27,13 @@ export class SocketService implements OnDestroy {
 
     this.socket = io(environment.socketUrl, {
       transports: ['websocket'],
+      // Se evalúa en cada (re)conexión: renueva el token si vence en <30s
+      auth: (cb) => {
+        this.keycloak.updateToken(30)
+          .catch(() => this.keycloak.login())
+          .then(() => this.keycloak.getToken())
+          .then((token) => cb({ token }));
+      },
       reconnection: true,
       reconnectionDelay: 2000,
       reconnectionAttempts: Infinity,

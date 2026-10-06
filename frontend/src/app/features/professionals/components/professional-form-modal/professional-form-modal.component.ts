@@ -39,12 +39,10 @@ export class ProfessionalFormModalComponent implements OnInit {
 
   readonly saving = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly showPassword = signal<boolean>(false);
 
   form!: FormGroup;
 
   ngOnInit(): void {
-    const isEdit = !!this.professional();
     const prof = this.professional();
 
     this.form = this.fb.group({
@@ -58,9 +56,7 @@ export class ProfessionalFormModalComponent implements OnInit {
       address: [prof?.address || ''],
       specialty: [prof?.specialty || 'Odontología General', [Validators.required]],
       colorTag: [prof?.colorTag || '#866385'],
-      notes: [prof?.notes || ''],
-      password: ['', isEdit ? [] : [Validators.minLength(6)]],
-      confirmPassword: ['']
+      notes: [prof?.notes || '']
     });
   }
 
@@ -72,10 +68,6 @@ export class ProfessionalFormModalComponent implements OnInit {
     this.form.patchValue({ colorTag: color });
   }
 
-  togglePasswordVisibility(): void {
-    this.showPassword.update(v => !v);
-  }
-
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -83,12 +75,6 @@ export class ProfessionalFormModalComponent implements OnInit {
     }
 
     const val = this.form.value;
-
-    // Validación de coincidencia de contraseña si se ingresó
-    if (val.password && val.password !== val.confirmPassword) {
-      this.errorMessage.set('Las contraseñas ingresadas no coinciden');
-      return;
-    }
 
     this.saving.set(true);
     this.errorMessage.set(null);
@@ -100,7 +86,6 @@ export class ProfessionalFormModalComponent implements OnInit {
       dni: val.dni?.trim() || undefined,
       birthDate: val.birthDate || undefined,
       email: val.email?.trim() || undefined,
-      password: val.password || undefined,
       phone: val.phone?.trim() || undefined,
       address: val.address?.trim() || undefined,
       specialty: val.specialty,

@@ -203,3 +203,13 @@
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-6px); }
 }
+
+.btn-link {
+  margin-top: 1rem;
+  background: none;
+  border: none;
+  color: var(--color-brand-purple);
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}

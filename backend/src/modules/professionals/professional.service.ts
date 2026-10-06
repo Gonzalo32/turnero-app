@@ -1,7 +1,7 @@
 import { Professional, IProfessional } from './professional.model';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
-import bcrypt from 'bcryptjs';
+import { User } from '../users/user.model';
 
 export interface CreateProfessionalDto {
   firstName: string;
@@ -10,7 +10,6 @@ export interface CreateProfessionalDto {
   dni?: string;
   birthDate?: string | Date;
   email?: string;
-  password?: string;
   phone?: string;
   address?: string;
   specialty?: string;
@@ -24,17 +23,18 @@ export interface UpdateProfessionalDto extends Partial<CreateProfessionalDto> {
 
 export class ProfessionalService {
 
-  /** Obtiene todos los profesionales activos, ordenados por apellido, sin exponer contraseña */
-  async getActiveProfessionals(): Promise<IProfessional[]> {
-    return Professional.find({ active: true })
-      .select('-password')
+  /** Profesionales activos, ordenados por apellido. Con sedeId: solo los que tienen usuario en esa sede. */
+  async getActiveProfessionals(sedeId?: string): Promise<IProfessional[]> {
+    const filter: Record<string, unknown> = { active: true };
+    if (sedeId) filter['_id'] = { $in: await User.distinct('professionalId', { sedeId, active: true }) };
+    return Professional.find(filter)
       .sort({ lastName: 1 })
       .lean<IProfessional[]>();
   }
 
-  /** Obtiene un profesional por ID (sin contraseña) */
+  /** Obtiene un profesional por ID () */
   async getProfessionalById(id: string): Promise<IProfessional> {
-    const prof = await Professional.findById(id).select('-password').lean<IProfessional>();
+    const prof = await Professional.findById(id).lean<IProfessional>();
     if (!prof) throw createError('Profesional no encontrado', 404, 'PROFESSIONAL_NOT_FOUND');
     return prof;
   }
@@ -70,7 +70,6 @@ export class ProfessionalService {
       dni: data.dni?.trim(),
       birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
       email: data.email?.trim().toLowerCase(),
-      password: data.password, // el pre-save hook lo encripta
       phone: data.phone?.trim(),
       address: data.address?.trim(),
       specialty: data.specialty?.trim() || 'Odontología General',
@@ -82,10 +81,7 @@ export class ProfessionalService {
     await newProfessional.save();
     logger.info(`[ProfessionalService] Odontólogo creado: ${newProfessional.lastName}, ${newProfessional.firstName} (${newProfessional._id})`);
 
-    // Devolver objeto sin la propiedad password
-    const result = newProfessional.toObject() as IProfessional;
-    delete (result as any).password;
-    return result;
+    return newProfessional.toObject() as IProfessional;
   }
 
   /** Actualiza datos de un odontólogo */
@@ -116,17 +112,10 @@ export class ProfessionalService {
       }
     }
 
-    if (data.password) {
-      const salt = await bcrypt.genSalt(10);
-      prof.password = await bcrypt.hash(data.password, salt);
-    }
-
     await prof.save();
     logger.info(`[ProfessionalService] Odontólogo actualizado: ${prof._id}`);
 
-    const result = prof.toObject() as IProfessional;
-    delete (result as any).password;
-    return result;
+    return prof.toObject() as IProfessional;
   }
 
   /** Desactiva lógicamente un profesional (AGENTS.md §53) */
@@ -135,7 +124,7 @@ export class ProfessionalService {
       id,
       { active: false },
       { new: true }
-    ).select('-password').lean<IProfessional>();
+    ).lean<IProfessional>();
 
     if (!prof) throw createError('Profesional no encontrado', 404, 'PROFESSIONAL_NOT_FOUND');
     logger.info(`[ProfessionalService] Profesional desactivado: ${id}`);

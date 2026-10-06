@@ -3,6 +3,28 @@ import { queueService } from './queue.service';
 import { QueueSource, CreateQueueEntryDto } from './queue.types';
 import { IQueueEntry } from './queue.model';
 import { toPublicEntry } from './queue.socket';
+import { QueueEntry } from './queue.model';
+import { canAccessProfessional } from '../../middlewares/auth.middleware';
+import { createError } from '../../middlewares/error.middleware';
+import { Types } from 'mongoose';
+
+async function assertProfessionalAccess(req: Request, professionalId: string | undefined): Promise<void> {
+  if (!professionalId || !(await canAccessProfessional(req.user!, professionalId))) {
+    throw createError('No tenés acceso a la cola de este profesional', 403, 'FORBIDDEN');
+  }
+}
+
+/** Middleware para /:id/* — la entrada debe pertenecer a un profesional al que el usuario accede */
+export async function requireEntryAccess(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = req.params['id'];
+    const entry = Types.ObjectId.isValid(id) ? await QueueEntry.findById(id).select('professionalId').lean() : null;
+    if (entry) await assertProfessionalAccess(req, entry.professionalId.toString());
+    next(); // si no existe, el service responde 400/404
+  } catch (err) {
+    next(err);
+  }
+}
 
 /**
  * Controller del módulo queue.
@@ -27,7 +49,11 @@ function transition(action: (id: string) => Promise<IQueueEntry>, message: strin
 /** GET /api/v1/queue */
 export async function getQueue(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const professionalId = req.query['professionalId'] as string | undefined;
+    const user = req.user!;
+    let professionalId = req.query['professionalId'] as string | undefined;
+    // Odontólogo: siempre su propia cola. Otros (salvo admin) deben indicar un profesional permitido.
+    if (!professionalId && user.roles.includes('odontologo')) professionalId = user.professionalId;
+    if (professionalId || !user.roles.includes('admin')) await assertProfessionalAccess(req, professionalId);
     const entries = await queueService.getActiveQueue(professionalId);
     res.json({ success: true, data: entries.map(toPublicEntry), message: null });
   } catch (err) {
@@ -38,6 +64,7 @@ export async function getQueue(req: Request, res: Response, next: NextFunction):
 /** POST /api/v1/queue — alta manual */
 export async function addToQueue(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    await assertProfessionalAccess(req, req.body.professionalId);
     const dto: CreateQueueEntryDto = {
       patientFirstName: req.body.patientFirstName,
       patientLastName: req.body.patientLastName,

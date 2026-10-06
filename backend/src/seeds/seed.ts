@@ -4,6 +4,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import mongoose from 'mongoose';
 import { Professional } from '../modules/professionals/professional.model';
+import { Sede } from '../modules/sedes/sede.model';
 
 /**
  * Seed data: profesionales iniciales del consultorio.
@@ -46,6 +47,13 @@ async function seed(): Promise<void> {
     } else {
       console.log(`[Seed] Ya existe: ${prof.firstName} ${prof.lastName}`);
     }
+  }
+
+  // Sede inicial con los consultorios que antes estaban hardcodeados en el login
+  const sedeName = 'Sede Central';
+  if (!(await Sede.exists({ name: sedeName }))) {
+    await Sede.create({ name: sedeName, offices: Array.from({ length: 9 }, (_, i) => `Consultorio ${i + 1}`) });
+    console.log(`[Seed] Sede creada: ${sedeName}`);
   }
 
   await mongoose.disconnect();

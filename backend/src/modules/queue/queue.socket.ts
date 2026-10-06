@@ -2,16 +2,31 @@ import { Server as SocketIOServer } from 'socket.io';
 import { IQueueEntry } from './queue.model';
 import { QUEUE_EVENTS, QueueEntryPublic } from './queue.types';
 import { logger } from '../../utils/logger';
+import { verifyAccessToken, canAccessProfessional, AuthUser } from '../../middlewares/auth.middleware';
 
 let io: SocketIOServer | null = null;
 
 export function initQueueSocket(socketServer: SocketIOServer): void {
   io = socketServer;
 
+  // Autenticación del handshake: el cliente envía { auth: { token } } con su access token de Keycloak
+  io.use(async (socket, next) => {
+    try {
+      socket.data.user = await verifyAccessToken(String(socket.handshake.auth?.['token'] ?? ''));
+      next();
+    } catch (err) {
+      next(err as Error);
+    }
+  });
+
   io.on('connection', (socket) => {
     logger.info(`[Socket] Cliente conectado: ${socket.id}`);
 
-    socket.on('queue:join-professional', (professionalId: string) => {
+    socket.on('queue:join-professional', async (professionalId: string) => {
+      if (!(await canAccessProfessional(socket.data.user as AuthUser, String(professionalId)).catch(() => false))) {
+        logger.warn(`[Socket] ${socket.id} sin acceso a professional:${professionalId}`);
+        return;
+      }
       socket.join(`professional:${professionalId}`);
       logger.debug(`[Socket] ${socket.id} se unió a sala professional:${professionalId}`);
     });

@@ -7,7 +7,10 @@
     </div>
 
     <h1 class="login-title">Sistema Odontológico</h1>
-    <p class="login-subtitle">Seleccioná tu nombre y consultorio para ingresar</p>
+    <p class="login-subtitle" *ngIf="user() as u">
+      Hola, {{ u.firstName }} · {{ roleLabels[u.role] }}<span *ngIf="u.sedeId"> · {{ u.sedeId.name }}</span>
+    </p>
+    <p class="login-subtitle">Seleccioná dónde vas a trabajar hoy</p>
 
     <!-- Error de conexión -->
     <div class="error-banner" *ngIf="errorMsg()">
@@ -18,25 +21,23 @@
       {{ errorMsg() }}
     </div>
 
-    <form class="login-form" (submit)="$event.preventDefault(); login()">
+    <form class="login-form" *ngIf="!loading() && !errorMsg()" (submit)="$event.preventDefault(); login()">
 
-      <!-- Profesional -->
-      <div class="field">
-        <label class="field-label" for="select-prof">Odontólogo / Profesional</label>
+      <!-- Profesional (el odontólogo usa el suyo) -->
+      <div class="field" *ngIf="!isDentist()">
+        <label class="field-label" for="select-prof">
+          Profesional{{ isAdmin() ? ' (opcional)' : '' }}
+        </label>
 
-        <div class="select-wrapper" [class.loading]="loadingProfessionals()">
+        <div class="select-wrapper">
           <select
             id="select-prof"
             class="field-select"
             [ngModel]="selectedProfId()"
             (ngModelChange)="selectedProfId.set($event)"
             name="profesional"
-            [disabled]="loadingProfessionals()"
-            required
           >
-            <option value="" disabled>
-              {{ loadingProfessionals() ? 'Cargando...' : '— Seleccioná un profesional —' }}
-            </option>
+            <option value="" [disabled]="!isAdmin()">— Seleccioná un profesional —</option>
             <option
               *ngFor="let prof of professionals(); trackBy: trackByProfId"
               [value]="prof._id"
@@ -65,7 +66,7 @@
             required
           >
             <option value="" disabled>— Seleccioná un consultorio —</option>
-            <option *ngFor="let o of offices" [value]="o">{{ o }}</option>
+            <option *ngFor="let o of offices()" [value]="o">{{ o }}</option>
           </select>
           <div class="select-arrow">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -91,6 +92,8 @@
       </button>
 
     </form>
+
+    <button type="button" class="btn-link" (click)="logout()" id="btn-salir">Cerrar sesión</button>
 
   </div>
 </div>

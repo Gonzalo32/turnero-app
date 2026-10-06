@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireRole } from '../../middlewares/auth.middleware';
 import {
   getProfessionals,
   getProfessionalById,
@@ -15,9 +16,9 @@ router.get('/', getProfessionals);
 router.get('/:id', getProfessionalById);
 
 /** POST /api/v1/professionals — Crear nuevo odontólogo */
-router.post('/', createProfessional);
+router.post('/', requireRole('admin'), createProfessional);
 
 /** PUT /api/v1/professionals/:id — Actualizar datos de un odontólogo */
-router.put('/:id', updateProfessional);
+router.put('/:id', requireRole('admin'), updateProfessional);
 
 export default router;
