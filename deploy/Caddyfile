@@ -1,0 +1,4 @@
+# HTTPS automático (Let's Encrypt). DOMAIN se define en .env
+{$DOMAIN} {
+	reverse_proxy turnero:3001
+}

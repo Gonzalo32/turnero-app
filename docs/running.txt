@@ -112,3 +112,32 @@ TERMINAL 2 — Frontend (App)
   CORS_ORIGIN=http://localhost:4300
   NODE_ENV=development
 
+
+
+═══════════════════════════════════════════════════════════════
+  PRODUCCIÓN (Docker + VPS)
+═══════════════════════════════════════════════════════════════
+
+  Cada push a master: GitHub Actions construye la imagen
+  (Dockerfile en la raíz), la sube a ghcr.io/gonzalo32/turnero-app
+  y actualiza el servidor por SSH.
+
+  Configuración inicial del servidor (una sola vez):
+    1. VPS Ubuntu 24.04 → curl -fsSL https://get.docker.com | sh
+    2. DNS: registro A del dominio → IP del VPS
+    3. ufw allow 22,80,443/tcp && ufw enable
+    4. Copiar deploy/docker-compose.yml y deploy/Caddyfile a ~/turnero
+    5. Crear ~/turnero/.env:
+         DOMAIN=tu-dominio.com
+         MONGODB_URI=mongodb://mongo:27017/senza_sistema
+         TOTEM_API_KEY=<openssl rand -hex 32>
+         JWT_SECRET=<openssl rand -hex 32>
+         NODE_ENV=production
+         PORT=3001
+    6. Secrets del repo en GitHub: SSH_HOST, SSH_USER, SSH_KEY
+    7. Paquete ghcr.io público, o en el VPS: docker login ghcr.io
+    8. Primer deploy: push a master (o "Run workflow" en Actions)
+    9. Seed (una vez): docker compose exec turnero node dist/seeds/seed.js
+
+  El tótem debe apuntar a https://tu-dominio.com y enviar el header
+  x-totem-api-key con el mismo valor de TOTEM_API_KEY.
