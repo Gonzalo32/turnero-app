@@ -12,6 +12,8 @@ export interface AuthUser {
   roles: Role[];
   sedeId?: string;
   professionalId?: string;
+  /** Vencimiento del access token (epoch, segundos) */
+  exp: number;
 }
 
 declare global {
@@ -23,8 +25,11 @@ declare global {
   }
 }
 
-const issuer = `${config.keycloak.url}/realms/${config.keycloak.realm}`;
-const jwks = createRemoteJWKSet(new URL(`${issuer}/protocol/openid-connect/certs`));
+const { issuer } = config.keycloak;
+// Las claves se piden por la URL interna; el `iss` se valida contra la pública.
+const jwks = createRemoteJWKSet(
+  new URL(`${config.keycloak.url}/realms/${config.keycloak.realm}/protocol/openid-connect/certs`)
+);
 const FRONTEND_CLIENT_ID = 'turnero-frontend';
 
 interface KeycloakPayload extends JWTPayload {
@@ -47,7 +52,7 @@ export async function verifyAccessToken(token: string): Promise<AuthUser> {
   } catch {
     throw createError('Token inválido o vencido', 401, 'UNAUTHORIZED');
   }
-  if (payload.azp !== FRONTEND_CLIENT_ID || !payload.sub) {
+  if (payload.azp !== FRONTEND_CLIENT_ID || !payload.sub || !payload.exp) {
     throw createError('Token no emitido para esta aplicación', 401, 'UNAUTHORIZED');
   }
 
@@ -78,6 +83,7 @@ export async function verifyAccessToken(token: string): Promise<AuthUser> {
     roles,
     sedeId: user.sedeId?.toString(),
     professionalId: user.professionalId?.toString(),
+    exp: payload.exp,
   };
 }
 

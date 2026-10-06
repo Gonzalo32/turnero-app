@@ -33,8 +33,11 @@ const io = new SocketIOServer(httpServer, {
 initQueueSocket(io);
 
 // ── Middleware ───────────────────────────────────────────────────────────────
+app.disable('x-powered-by');
+app.set('trust proxy', 1); // Caddy delante (IP real del cliente en req.ip)
+app.set('query parser', 'simple'); // query como strings: evita ?x[$ne]= llegando a Mongo como objeto
 app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 // ── Rutas API v1 ─────────────────────────────────────────────────────────────
 // Todas requieren access token de Keycloak (el tótem usa su propia API key, más abajo)

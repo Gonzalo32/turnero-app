@@ -51,6 +51,8 @@ export class SocketService implements OnDestroy {
     this.socket.on('disconnect', (reason) => {
       logger.warn('[SocketService] Desconectado:', reason);
       this.connected.set(false);
+      // El backend corta al vencer el token; reconectar pide uno nuevo vía `auth`
+      if (reason === 'io server disconnect') this.socket?.connect();
     });
 
     this.socket.on('connect_error', (err) => {

@@ -4,6 +4,7 @@ import { Sede } from '../sedes/sede.model';
 import { Professional } from '../professionals/professional.model';
 import { professionalService } from '../professionals/professional.service';
 import { keycloakAdmin } from '../../integrations/keycloak/keycloak-admin.service';
+import { disconnectUserSockets } from '../queue/queue.socket';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
 
@@ -123,6 +124,7 @@ export class UserService {
     await keycloakAdmin.setEnabled(user.keycloakId, active);
     user.active = active;
     await user.save();
+    if (!active) disconnectUserSockets(id);
     logger.info(`[UserService] Usuario ${active ? 'activado' : 'desactivado'}: ${user.username}`);
     return this.getById(id);
   }

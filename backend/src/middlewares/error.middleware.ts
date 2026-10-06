@@ -19,7 +19,8 @@ export function errorMiddleware(
   res: Response,
   _next: NextFunction
 ): void {
-  const statusCode = err.statusCode ?? 500;
+  // body-parser marca sus errores (JSON inválido, payload muy grande) con `status`
+  const statusCode = err.statusCode ?? (err as { status?: number }).status ?? 500;
   const message = err.message ?? 'Error interno del servidor';
   const code = err.code ?? 'INTERNAL_ERROR';
 
@@ -28,7 +29,8 @@ export function errorMiddleware(
   res.status(statusCode).json({
     success: false,
     data: null,
-    message,
+    // Los 5xx pueden traer detalles internos (Keycloak, Mongo): solo al log fuera de desarrollo
+    message: statusCode >= 500 && !isDev ? 'Error interno del servidor' : message,
     code,
   });
 }

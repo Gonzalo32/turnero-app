@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { professionalService } from './professional.service';
+import { canAccessProfessional } from '../../middlewares/auth.middleware';
+import { createError } from '../../middlewares/error.middleware';
 
 /** GET /api/v1/professionals */
 export async function getProfessionals(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -17,6 +19,10 @@ export async function getProfessionals(req: Request, res: Response, next: NextFu
 /** GET /api/v1/professionals/:id */
 export async function getProfessionalById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    // Ficha completa (DNI, teléfono, domicilio): solo a quien tiene acceso a ese profesional
+    if (!(await canAccessProfessional(req.user!, req.params['id']))) {
+      throw createError('No tenés acceso a este profesional', 403, 'FORBIDDEN');
+    }
     const professional = await professionalService.getProfessionalById(req.params['id']);
     res.json({ success: true, data: professional, message: null });
   } catch (err) {

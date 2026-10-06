@@ -21,9 +21,15 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
 
   io.on('connection', (socket) => {
     logger.info(`[Socket] Cliente conectado: ${socket.id}`);
+    const user = socket.data.user as AuthUser;
+    socket.join(`user:${user.id}`);
+
+    // El token solo se valida en el handshake: al vencer se corta y el cliente reconecta con uno nuevo.
+    const expiry = setTimeout(() => socket.disconnect(true), Math.max(0, user.exp * 1000 - Date.now()));
+    socket.on('disconnect', () => clearTimeout(expiry));
 
     socket.on('queue:join-professional', async (professionalId: string) => {
-      if (!(await canAccessProfessional(socket.data.user as AuthUser, String(professionalId)).catch(() => false))) {
+      if (!(await canAccessProfessional(user, String(professionalId)).catch(() => false))) {
         logger.warn(`[Socket] ${socket.id} sin acceso a professional:${professionalId}`);
         return;
       }
@@ -39,6 +45,11 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
       logger.info(`[Socket] Cliente desconectado: ${socket.id}`);
     });
   });
+}
+
+/** Corta las conexiones en vivo de un usuario (p. ej. al desactivarlo) */
+export function disconnectUserSockets(userId: string): void {
+  io?.in(`user:${userId}`).disconnectSockets(true);
 }
 
 /** Datos mínimos de una entrada para la pantalla del profesional (AGENTS.md §58) */
