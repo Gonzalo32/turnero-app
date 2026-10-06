@@ -44,4 +44,4 @@ Simulate a tótem arrival: `backend/simulate_totem.ps1` (POSTs to `/api/v1/integ
 - **Users ≠ professionals:** `users.professionalId` optionally links a user to a `Professional` (required for `odontologo`). A professional's sede is the sede of its linked user. Queue scope (`canAccessProfessional`): admin → all, odontólogo → own, secretaria → professionals of their sede.
 - Admin creates users via `/api/v1/users`, which calls the Keycloak Admin REST API (`integrations/keycloak/keycloak-admin.service.ts`, service account of client `turnero-backend`) and rolls back the Keycloak user if the Mongo save fails. The first `admin` is auto-provisioned on first login.
 - After Keycloak login, `/login` is a workspace picker (consultorio from the user's sede; secretaria/admin also pick the professional whose queue they work). Selection lives in `localStorage` via `SessionService`.
-- `ng build --configuration production` fails on pre-existing CSS budgets (data-table, queue-list, professional-form-modal).
+- `anyComponentStyle` budget in `angular.json` is 4kB warning / 8kB error; several component styles exceed the warning.
