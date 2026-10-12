@@ -1,25 +1,11 @@
-﻿import mongoose, { Schema, Document, Types } from 'mongoose';
-import { QueueStatus } from '../queue/queue.types';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IVisita {
-  numeroVisita: number;
-  fecha: Date;
-  fechaStr?: string;
-  profesional?: string;
-  profesionalId?: Types.ObjectId;
-  obraSocial?: string;
-  estado: QueueStatus | string;
-  atendidoAt?: Date;
-}
-
-export interface ICambioProfesional {
-  fecha: Date;
-  fechaStr?: string;
-  profesionalAnterior: string;
-  profesionalNuevo: string;
-}
-
-export interface IPatient extends Document {
+/**
+ * Modelo de Paciente (Colección: 'pacientes').
+ * Contiene estrictamente los datos filiatorios y personales del paciente.
+ * Todo lo relativo a visitas y turnos se gestiona en la colección 'atenciones'.
+ */
+export interface IPaciente extends Document {
   _id: Types.ObjectId;
   dni: string;
   nombre: string;
@@ -32,33 +18,17 @@ export interface IPatient extends Document {
   localidad?: string;
   domicilio?: string;
   observacion: any[];
-  createdAt: Date;
 
-  // Turnero
-  profesionalId?: Types.ObjectId;
-  estado: QueueStatus;
-  status: QueueStatus;
-  joinedAt: Date;
-  calledAt?: Date;
-  attentionStartedAt?: Date;
-  completedAt?: Date;
-  cancelledAt?: Date;
-
-  // Historial de visitas y cambios
-  totalVisitas: number;
-  visitas: IVisita[];
-  cambiosProfesional: ICambioProfesional[];
-
-  // Virtuals
+  // Virtuals de compatibilidad
   patientFirstName?: string;
   patientLastName?: string;
   patientDni?: string;
   healthInsurance?: string;
 }
 
-export const PatientSchema = new Schema<IPatient>(
+export const PatientSchema = new Schema<IPaciente>(
   {
-    dni: { type: String, required: true },
+    dni: { type: String, required: true, index: true },
     nombre: { type: String, required: true },
     apellido: { type: String, required: true },
     telefono: { type: String },
@@ -69,33 +39,10 @@ export const PatientSchema = new Schema<IPatient>(
     localidad: { type: String },
     domicilio: { type: String },
     observacion: { type: Array, default: [] } as any,
-    createdAt: { type: Date, default: Date.now },
-
-    // Turnero
-    profesionalId: { type: Schema.Types.ObjectId, ref: 'Professional' },
-    estado: {
-      type: String,
-      enum: Object.values(QueueStatus),
-      default: QueueStatus.WAITING,
-    },
-    status: {
-      type: String,
-      enum: Object.values(QueueStatus),
-      default: QueueStatus.WAITING,
-    },
-    joinedAt: { type: Date, default: Date.now },
-    calledAt: { type: Date },
-    attentionStartedAt: { type: Date },
-    completedAt: { type: Date },
-    cancelledAt: { type: Date },
-
-    // Historial
-    totalVisitas: { type: Number, default: 1 },
-    visitas: { type: Array, default: [] } as any,
-    cambiosProfesional: { type: Array, default: [] } as any,
   },
   {
     versionKey: false,
+    timestamps: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -114,7 +61,6 @@ PatientSchema.virtual('healthInsurance').get(function () {
   return this.obraSocial || 'Particular';
 });
 
-PatientSchema.index({ dni: 1 });
-PatientSchema.index({ profesionalId: 1, estado: 1, joinedAt: 1 });
-
-export const Patient = mongoose.model<IPatient>('Patient', PatientSchema);
+export const Paciente = mongoose.model<IPaciente>('Paciente', PatientSchema, 'pacientes');
+export const Patient = Paciente;
+export type IPatient = IPaciente;

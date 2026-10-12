@@ -2,13 +2,14 @@ import { queueService } from '../../modules/queue/queue.service';
 import { QueueStatus } from '../../modules/queue/queue.types';
 import { Professional } from '../../modules/professionals/professional.model';
 import { Patient } from '../../modules/patients/patient.model';
+import { Atencion } from '../../modules/atenciones/atencion.model';
 import { TotemPatientRecord } from './totem.types';
 import { logger } from '../../utils/logger';
 import { emitPatientAdded, emitPatientCancelled } from '../../modules/queue/queue.socket';
 
 /**
  * Servicio de integración con el tótem.
- * Almacena el historial de visitas y cambios de profesional directamente en la colección 'patients'.
+ * Guarda los datos del paciente en 'pacientes' y el turno/visita en 'atenciones'.
  */
 export class TotemIntegrationService {
 
@@ -35,50 +36,9 @@ export class TotemIntegrationService {
         }
       }
 
-      // Buscar si ya existía el paciente para registrar la visita y auditoría
-      const existing = await Patient.findOne({ dni: record.dni });
       const ahora = new Date();
-      const fechaStr = `${ahora.getDate()}/${ahora.getMonth() + 1}/${ahora.getFullYear()} ${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
 
-      let totalVisitas = 1;
-      let visitas: any[] = [];
-      let cambiosProfesional: any[] = [];
-      let transferredFromProfId: string | undefined;
-
-      if (existing) {
-        totalVisitas = (existing.totalVisitas || existing.visitas?.length || 1) + 1;
-        visitas = Array.isArray(existing.visitas) ? [...existing.visitas] : [];
-        cambiosProfesional = Array.isArray(existing.cambiosProfesional) ? [...existing.cambiosProfesional] : [];
-
-        // Registrar si hubo cambio de profesional
-        const profAnterior = existing.profesional;
-        const profNuevo = record.profesional;
-        if (profAnterior && profNuevo && profAnterior.toLowerCase().trim() !== profNuevo.toLowerCase().trim()) {
-          cambiosProfesional.push({
-            fecha: ahora,
-            fechaStr,
-            profesionalAnterior: profAnterior,
-            profesionalNuevo: profNuevo,
-          });
-          logger.info(`[TotemIntegration] ⇄ Cambio de profesional para DNI ${record.dni}: ${profAnterior} → ${profNuevo}`);
-          if (existing.profesionalId && professionalId && existing.profesionalId.toString() !== professionalId.toString()) {
-            transferredFromProfId = existing.profesionalId.toString();
-          }
-        }
-      }
-
-      // Registrar la visita actual
-      visitas.push({
-        numeroVisita: totalVisitas,
-        fecha: ahora,
-        fechaStr,
-        profesional: record.profesional,
-        profesionalId: professionalId || null,
-        obraSocial: record.obraSocial || 'Particular',
-        estado: QueueStatus.WAITING,
-        atendidoAt: null,
-      });
-
+      // Datos estrictamente filiatorios del paciente para la colección 'pacientes'
       const patientData: any = {
         dni: record.dni,
         nombre: record.nombre,
@@ -91,37 +51,81 @@ export class TotemIntegrationService {
         localidad: record.localidad,
         domicilio: record.domicilio,
         observacion: record.observacion ?? [],
-        estado: QueueStatus.WAITING,
-        status: QueueStatus.WAITING,
-        joinedAt: ahora,
-        calledAt: null,
-        attentionStartedAt: null,
-        completedAt: null,
-        cancelledAt: null,
-        totalVisitas,
-        visitas,
-        cambiosProfesional,
       };
 
-      if (professionalId) {
-        patientData.profesionalId = professionalId;
+      const setOnInsert: any = {};
+      if (record._id) {
+        setOnInsert._id = record._id;
       }
 
       const patient = await Patient.findOneAndUpdate(
         { dni: record.dni },
-        { $set: patientData },
+        { 
+          $setOnInsert: setOnInsert,
+          $set: patientData 
+        },
         { upsert: true, new: true }
       );
 
-      // Si fue transferido de otro profesional, avisar a la pantalla del anterior para que lo remueva
-      if (transferredFromProfId) {
-        emitPatientCancelled({ ...patient.toObject(), profesionalId: transferredFromProfId });
+      // Registrar en la nueva tabla 'atenciones'
+      if (professionalId) {
+        const oneMinuteAgo = new Date(ahora.getTime() - 60000);
+
+        // Verificar si ya tiene una atención en espera reciente para evitar duplicar
+        const existingDoc = await Atencion.findOne({
+          patientId: patient._id,
+          atenciones: {
+            $elemMatch: {
+              professionalId: professionalId,
+              estado: QueueStatus.WAITING,
+              fecha: { $gte: oneMinuteAgo },
+            },
+          },
+        });
+
+        let itemToEmit: any;
+
+        if (existingDoc) {
+          itemToEmit = existingDoc.atenciones.find(
+            (a) => a.professionalId.toString() === professionalId.toString() && a.estado === QueueStatus.WAITING
+          );
+        } else {
+          const doc = await Atencion.findOneAndUpdate(
+            { patientId: patient._id },
+            {
+              $push: {
+                atenciones: {
+                  professionalId: professionalId,
+                  fecha: ahora,
+                  estado: QueueStatus.WAITING,
+                },
+              },
+            },
+            { upsert: true, new: true }
+          );
+          itemToEmit = doc.atenciones[doc.atenciones.length - 1];
+        }
+
+        logger.info(`[TotemIntegration] ✓ Registro de atención en 'atenciones' para DNI ${patient.dni} (Item ID: ${itemToEmit._id})`);
+
+        // Emitir paciente en espera para la pantalla del odontólogo en tiempo real
+        emitPatientAdded({
+          _id: itemToEmit._id,
+          patientId: patient._id,
+          dni: patient.dni,
+          nombre: patient.nombre,
+          apellido: patient.apellido,
+          obraSocial: patient.obraSocial,
+          profesional: patient.profesional,
+          profesionalId: professionalId,
+          estado: QueueStatus.WAITING,
+          status: QueueStatus.WAITING,
+          joinedAt: itemToEmit.fecha,
+          fecha: itemToEmit.fecha,
+        });
       }
 
-      // Emitir paciente en espera para la pantalla del odontólogo
-      emitPatientAdded(patient);
-
-      logger.info(`[TotemIntegration] ✓ Paciente guardado en 'patients' (Visita #${totalVisitas}): ${patient.nombre} ${patient.apellido}`);
+      logger.info(`[TotemIntegration] ✓ Paciente guardado en 'pacientes': ${patient.nombre} ${patient.apellido}`);
     } catch (error) {
       logger.error('[TotemIntegration] Error procesando paciente del tótem:', error);
     }
