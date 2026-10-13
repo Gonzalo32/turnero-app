@@ -6,8 +6,11 @@ import { totemIntegrationService } from './totem.service';
 
 const router = Router();
 
-/** El tótem se autentica con una clave compartida en el header x-totem-api-key. */
+/** El tótem se autentica con una clave compartida en el header x-totem-api-key (si está configurada). */
 function requireTotemApiKey(req: Request, _res: Response, next: NextFunction): void {
+  if (!config.totemApiKey) {
+    return next();
+  }
   const received = Buffer.from(req.header('x-totem-api-key') ?? '');
   const expected = Buffer.from(config.totemApiKey);
   if (received.length !== expected.length || !timingSafeEqual(received, expected)) {

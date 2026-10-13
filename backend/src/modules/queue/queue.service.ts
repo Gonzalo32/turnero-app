@@ -55,10 +55,19 @@ export class QueueService {
     const professionalId = new Types.ObjectId(dto.professionalId);
     const source = dto.source ?? QueueSource.MANUAL;
 
+    const patientFieldsToSet: Record<string, unknown> = { nombre, apellido };
+    if (dto.healthInsurance) patientFieldsToSet.obraSocial = dto.healthInsurance;
+    if (dto.phone) patientFieldsToSet.telefono = dto.phone;
+    if (dto.birthDate) patientFieldsToSet.fechaNacimiento = dto.birthDate;
+    if (dto.affiliateNumber) patientFieldsToSet.numeroAfiliado = dto.affiliateNumber;
+    if (dto.city) patientFieldsToSet.localidad = dto.city;
+    if (dto.address) patientFieldsToSet.domicilio = dto.address;
+    if (dto.notes) patientFieldsToSet.observacion = dto.notes;
+
     const patient = await Patient.findOneAndUpdate(
       { dni },
       {
-        $set: { nombre, apellido },
+        $set: patientFieldsToSet,
         $setOnInsert: dto.sourceRecordId ? { sourceSystem: source, sourcePatientId: dto.sourceRecordId } : {},
       },
       { upsert: true, new: true }

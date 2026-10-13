@@ -30,6 +30,12 @@ export interface CreateQueueEntryDto {
   professionalId: string;
   source?: QueueSource;
   sourceRecordId?: string;
+  phone?: string;
+  birthDate?: string;
+  affiliateNumber?: string;
+  city?: string;
+  address?: string;
+  notes?: any[];
 }
 
 /** Respuesta pública de una entrada de cola (lo que se expone al frontend) */
