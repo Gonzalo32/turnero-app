@@ -24,44 +24,37 @@ export class QueueService {
 
   async getActiveQueue(professionalId?: string): Promise<IQueueItem[]> {
     const filter: Record<string, unknown> = {
-      'atenciones.estado': { $in: [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION] },
+      estado: { $in: [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION] },
     };
 
     if (professionalId) {
       if (!Types.ObjectId.isValid(professionalId)) {
         throw createError('ID de profesional inválido', 400, 'INVALID_PROFESSIONAL_ID');
       }
-      filter['atenciones.professionalId'] = new Types.ObjectId(professionalId);
+      filter.professionalId = new Types.ObjectId(professionalId);
     }
 
-    const docs = await Atencion.find(filter).populate('patientId');
+    const docs = await Atencion.find(filter)
+      .populate('patientId')
+      .sort({ fecha: 1 });
 
-    const activeItems: IQueueItem[] = [];
-    for (const doc of docs) {
+    return docs.map((doc) => {
       const p = (doc.patientId as any) || {};
-      for (const item of doc.atenciones) {
-        const isWaitingOrAttending = [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.IN_ATTENTION].includes(item.estado as QueueStatus);
-        const matchesProf = !professionalId || item.professionalId.toString() === professionalId;
-        if (isWaitingOrAttending && matchesProf) {
-          activeItems.push({
-            _id: item._id,
-            patientId: p._id || doc.patientId,
-            dni: p.dni || '',
-            nombre: p.nombre || '',
-            apellido: p.apellido || '',
-            obraSocial: p.obraSocial || 'Particular',
-            profesional: p.profesional,
-            profesionalId: item.professionalId,
-            estado: item.estado,
-            status: item.estado,
-            fecha: item.fecha,
-            joinedAt: item.fecha,
-          });
-        }
-      }
-    }
-
-    return activeItems.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      return {
+        _id: doc._id,
+        patientId: p._id || doc.patientId,
+        dni: p.dni || '',
+        nombre: p.nombre || '',
+        apellido: p.apellido || '',
+        obraSocial: p.obraSocial || 'Particular',
+        profesional: p.profesional,
+        profesionalId: doc.professionalId,
+        estado: doc.estado,
+        status: doc.estado,
+        fecha: doc.fecha,
+        joinedAt: doc.fecha,
+      };
+    });
   }
 
   async addToQueue(dto: CreateQueueEntryDto): Promise<{ entry: IQueueItem; transferredFromProfId?: string }> {
@@ -93,25 +86,16 @@ export class QueueService {
     const ahora = new Date();
     const professionalId = new Types.ObjectId(dto.professionalId);
 
-    // Agregar nueva consulta al array 'atenciones' del paciente
-    const doc = await Atencion.findOneAndUpdate(
-      { patientId: patient._id },
-      {
-        $push: {
-          atenciones: {
-            professionalId,
-            fecha: ahora,
-            estado: QueueStatus.WAITING,
-          },
-        },
-      },
-      { upsert: true, new: true }
-    );
-
-    const nuevoItem = doc.atenciones[doc.atenciones.length - 1];
+    // Crear la consulta/atención individual en la colección 'atenciones'
+    const doc = await Atencion.create({
+      patientId: patient._id,
+      professionalId,
+      fecha: ahora,
+      estado: QueueStatus.WAITING,
+    });
 
     const entry: IQueueItem = {
-      _id: nuevoItem._id,
+      _id: doc._id,
       patientId: patient._id,
       dni: patient.dni,
       nombre: patient.nombre,
@@ -119,13 +103,13 @@ export class QueueService {
       obraSocial: patient.obraSocial || 'Particular',
       profesional: patient.profesional,
       profesionalId: professionalId,
-      estado: nuevoItem.estado,
-      status: nuevoItem.estado,
-      fecha: nuevoItem.fecha,
-      joinedAt: nuevoItem.fecha,
+      estado: doc.estado,
+      status: doc.estado,
+      fecha: doc.fecha,
+      joinedAt: doc.fecha,
     };
 
-    logger.info(`[QueueService] Atención agregada al array de 'atenciones': ${nuevoItem._id} para DNI ${dni}`);
+    logger.info(`[QueueService] Atención individual creada en 'atenciones': ${doc._id} para DNI ${dni}`);
     return { entry };
   }
 
@@ -157,38 +141,34 @@ export class QueueService {
     if (!Types.ObjectId.isValid(itemId)) {
       throw createError('ID de atención inválido', 400, 'INVALID_ATTENTION_ID');
     }
-    const res = await Atencion.updateOne(
-      { 'atenciones._id': new Types.ObjectId(itemId) },
-      { $set: { 'atenciones.$.estado': status } }
-    );
-    if (res.matchedCount === 0) {
+    const res = await Atencion.findByIdAndUpdate(itemId, { estado: status });
+    if (!res) {
       throw createError('Atención no encontrada', 404, 'ATTENTION_NOT_FOUND');
     }
   }
 
   private async findQueueItem(itemId: string): Promise<IQueueItem> {
-    const doc = await Atencion.findOne({ 'atenciones._id': new Types.ObjectId(itemId) }).populate('patientId');
+    if (!Types.ObjectId.isValid(itemId)) {
+      throw createError('ID de atención inválido', 400, 'INVALID_ATTENTION_ID');
+    }
+    const doc = await Atencion.findById(itemId).populate('patientId');
     if (!doc) {
       throw createError('Atención no encontrada', 404, 'ATTENTION_NOT_FOUND');
     }
-    const item = doc.atenciones.find((a) => a._id.toString() === itemId);
-    if (!item) {
-      throw createError('Turno no encontrado', 404, 'ATTENTION_NOT_FOUND');
-    }
     const p = (doc.patientId as any) || {};
     return {
-      _id: item._id,
+      _id: doc._id,
       patientId: p._id || doc.patientId,
       dni: p.dni || '',
       nombre: p.nombre || '',
       apellido: p.apellido || '',
       obraSocial: p.obraSocial || 'Particular',
       profesional: p.profesional,
-      profesionalId: item.professionalId,
-      estado: item.estado,
-      status: item.estado,
-      fecha: item.fecha,
-      joinedAt: item.fecha,
+      profesionalId: doc.professionalId,
+      estado: doc.estado,
+      status: doc.estado,
+      fecha: doc.fecha,
+      joinedAt: doc.fecha,
     };
   }
 }

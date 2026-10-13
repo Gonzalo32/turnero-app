@@ -67,50 +67,33 @@ export class TotemIntegrationService {
         { upsert: true, new: true }
       );
 
-      // Registrar en la nueva tabla 'atenciones'
+      // Registrar en la colección 'atenciones' como documento individual
       if (professionalId) {
         const oneMinuteAgo = new Date(ahora.getTime() - 60000);
 
         // Verificar si ya tiene una atención en espera reciente para evitar duplicar
-        const existingDoc = await Atencion.findOne({
+        let atencion = await Atencion.findOne({
           patientId: patient._id,
-          atenciones: {
-            $elemMatch: {
-              professionalId: professionalId,
-              estado: QueueStatus.WAITING,
-              fecha: { $gte: oneMinuteAgo },
-            },
-          },
+          professionalId: professionalId,
+          estado: QueueStatus.WAITING,
+          fecha: { $gte: oneMinuteAgo },
         });
 
-        let itemToEmit: any;
-
-        if (existingDoc) {
-          itemToEmit = existingDoc.atenciones.find(
-            (a) => a.professionalId.toString() === professionalId.toString() && a.estado === QueueStatus.WAITING
-          );
+        if (!atencion) {
+          atencion = await Atencion.create({
+            patientId: patient._id,
+            professionalId: professionalId,
+            fecha: ahora,
+            estado: QueueStatus.WAITING,
+          });
+          logger.info(`[TotemIntegration] ✓ Registro de atención individual creado en 'atenciones' para DNI ${patient.dni} (ID: ${atencion._id})`);
         } else {
-          const doc = await Atencion.findOneAndUpdate(
-            { patientId: patient._id },
-            {
-              $push: {
-                atenciones: {
-                  professionalId: professionalId,
-                  fecha: ahora,
-                  estado: QueueStatus.WAITING,
-                },
-              },
-            },
-            { upsert: true, new: true }
-          );
-          itemToEmit = doc.atenciones[doc.atenciones.length - 1];
+          logger.info(`[TotemIntegration] ℹ Atención en espera reciente ya existente para DNI ${patient.dni} (ID: ${atencion._id})`);
         }
-
-        logger.info(`[TotemIntegration] ✓ Registro de atención en 'atenciones' para DNI ${patient.dni} (Item ID: ${itemToEmit._id})`);
 
         // Emitir paciente en espera para la pantalla del odontólogo en tiempo real
         emitPatientAdded({
-          _id: itemToEmit._id,
+          _id: atencion._id,
           patientId: patient._id,
           dni: patient.dni,
           nombre: patient.nombre,
@@ -120,8 +103,8 @@ export class TotemIntegrationService {
           profesionalId: professionalId,
           estado: QueueStatus.WAITING,
           status: QueueStatus.WAITING,
-          joinedAt: itemToEmit.fecha,
-          fecha: itemToEmit.fecha,
+          joinedAt: atencion.fecha,
+          fecha: atencion.fecha,
         });
       }
 
