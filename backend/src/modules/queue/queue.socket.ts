@@ -20,6 +20,15 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
       socket.leave(`professional:${professionalId}`);
     });
 
+    socket.on('queue:join-tv', () => {
+      socket.join('queue:tv');
+      logger.debug(`[Socket] ${socket.id} se unió a sala general queue:tv`);
+    });
+
+    socket.on('queue:leave-tv', () => {
+      socket.leave('queue:tv');
+    });
+
     socket.on('disconnect', () => {
       logger.info(`[Socket] Cliente desconectado: ${socket.id}`);
     });
@@ -36,6 +45,7 @@ export function toPublicEntry(e: IQueueEntry): QueueEntryPublic {
     patientDni: e.patientDni,
     healthInsurance: e.healthInsurance,
     professionalId: e.professionalId,
+    office: e.office,
     status: e.status,
     visitNumber: e.visitNumber,
     joinedAt: e.joinedAt,
@@ -46,12 +56,14 @@ export function toPublicEntry(e: IQueueEntry): QueueEntryPublic {
   };
 }
 
-/** Emite el evento solo a la sala del profesional dueño de la entrada */
+/** Emite el evento a la sala del profesional dueño de la entrada y a la sala general del turnero de TV */
 function emitToProfessional(event: string, entry: IQueueEntry): void {
   if (!io) return;
+  const publicEntry = toPublicEntry(entry);
   const room = `professional:${entry.professionalId.toString()}`;
-  io.to(room).emit(event, toPublicEntry(entry));
-  logger.debug(`[Socket] ${event} emitido a ${room}`);
+  io.to(room).emit(event, publicEntry);
+  io.to('queue:tv').emit(event, publicEntry);
+  logger.debug(`[Socket] ${event} emitido a ${room} y queue:tv`);
 }
 
 export const emitPatientAdded = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_ADDED, e);
