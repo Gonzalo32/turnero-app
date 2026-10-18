@@ -1,10 +1,34 @@
 <div class="dashboard-shell">
 
   <!-- ══════════════════ SIDEBAR ══════════════════ -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.sidebar--collapsed]="isCollapsed()">
+
+    <!-- Botón circular para contraer / expandir -->
+    <button
+      type="button"
+      class="btn-toggle-sidebar"
+      (click)="toggleSidebar()"
+      [attr.aria-label]="isCollapsed() ? 'Expandir menú lateral' : 'Contraer menú lateral'"
+      [title]="isCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+      id="btn-toggle-sidebar"
+    >
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="toggle-icon"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
 
     <!-- Logo -->
-    <div class="sidebar-brand">
+    <div class="sidebar-brand" [title]="isCollapsed() ? 'Senza Consultorios' : ''">
       <div class="brand-icon">
         <span style="font-family: var(--font-brand); font-size: 2.5rem; line-height: 1; font-weight: 400; font-style: italic; color: var(--color-brand-purple); padding-right: 2px;">S</span>
       </div>
@@ -18,6 +42,7 @@
         routerLink="/dashboard/pacientes"
         routerLinkActive="nav-item--active"
         id="nav-cola-espera"
+        title="Cola de espera"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -25,7 +50,21 @@
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <span>Cola de espera</span>
+        <span class="nav-text">Cola de espera</span>
+      </a>
+
+      <a
+        class="nav-item"
+        routerLink="/dashboard/turnero"
+        routerLinkActive="nav-item--active"
+        id="nav-turnero"
+        title="Turnero"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="20" height="15" x="2" y="7" rx="2" ry="2"/>
+          <polyline points="17 2 12 7 7 2"/>
+        </svg>
+        <span class="nav-text">Turnero</span>
       </a>
 
       <a
@@ -33,6 +72,7 @@
         routerLink="/dashboard/odontologos"
         routerLinkActive="nav-item--active"
         id="nav-odontologos"
+        title="Odontólogos"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -40,7 +80,7 @@
           <path d="M19 11v6"/>
           <path d="M22 14h-6"/>
         </svg>
-        <span>Odontólogos</span>
+        <span class="nav-text">Odontólogos</span>
       </a>
     </nav>
     <!-- Spacer para empujar el footer hacia abajo -->
