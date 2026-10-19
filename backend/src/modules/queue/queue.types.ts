@@ -19,6 +19,8 @@ export const ACTIVE_QUEUE_STATUSES = [QueueStatus.WAITING, QueueStatus.CALLED, Q
 export enum QueueSource {
   TOTEM = 'totem',
   MANUAL = 'manual',
+  TOTEM_UPPER = 'TOTEM',
+  MANUAL_UPPER = 'MANUAL',
 }
 
 /** DTO para crear una nueva entrada en la cola */
@@ -40,7 +42,7 @@ export interface QueueEntryPublic {
   patientLastName: string;
   patientDni: string;
   healthInsurance: string;
-  patientId: Types.ObjectId | string;
+  patientId?: Types.ObjectId | string;
   professionalId: Types.ObjectId | string;
   office?: string;
   status: QueueStatus;
