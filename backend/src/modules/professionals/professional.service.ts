@@ -42,8 +42,20 @@ export class ProfessionalService {
 
   /** Crea un nuevo odontólogo validando unicidad de correo y DNI */
   async createProfessional(data: CreateProfessionalDto): Promise<IProfessional> {
-    if (!data.firstName || !data.lastName) {
+    if (!data.firstName?.trim() || !data.lastName?.trim()) {
       throw createError('Nombre y apellido son obligatorios', 400, 'VALIDATION_ERROR');
+    }
+
+    if (!data.licenseNumber?.trim()) {
+      throw createError('La matrícula es obligatoria', 400, 'VALIDATION_ERROR');
+    }
+
+    if (!data.email?.trim()) {
+      throw createError('El correo electrónico es obligatorio', 400, 'VALIDATION_ERROR');
+    }
+
+    if (!data.password || data.password.length < 6) {
+      throw createError('La contraseña es obligatoria y debe tener al menos 6 caracteres', 400, 'VALIDATION_ERROR');
     }
 
     // Verificar si el correo ya está registrado
@@ -120,8 +132,7 @@ export class ProfessionalService {
     }
 
     if (data.password) {
-      const salt = await bcrypt.genSalt(10);
-      prof.password = await bcrypt.hash(data.password, salt);
+      prof.password = data.password;
     }
 
     await prof.save();
