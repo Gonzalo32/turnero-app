@@ -18,6 +18,7 @@ export interface TvPatientRow {
   office: string;
   joinedAt: string;
   joinedTime: string;
+  status: QueueStatus;
 }
 
 @Component({
@@ -36,11 +37,19 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
   readonly loading = signal<boolean>(true);
   readonly currentTime = signal<Date>(new Date());
 
+  /** Pacientes recientemente llamados para resaltar visualmente en TV */
+  readonly recentlyCalledIds = signal<Set<string>>(new Set());
+  private callTimeouts = new Map<string, any>();
+
   private socketCleanups: Array<() => void> = [];
   private clockInterval: any;
   private syncInterval: any;
 
-  /** Filtra todos los pacientes en estado WAITING que tengan que atenderse en el día */
+  /**
+   * Pacientes en sala de espera hoy:
+   * Incluye WAITING y CALLED.
+   * Al pasar a IN_ATTENTION, COMPLETED o CANCELLED se oculta de la pantalla sin borrar datos.
+   */
   readonly waitingPatients = computed<TvPatientRow[]>(() => {
     const profs = this.professionalsMap();
     const now = new Date();
@@ -57,9 +66,34 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
       }
     };
 
+    const visibleStatuses = [QueueStatus.WAITING, QueueStatus.CALLED];
+    const calledIds = this.recentlyCalledIds();
+
     return this.allEntries()
-      .filter(e => String(e.status).toUpperCase() === 'WAITING' && isPatientForToday(e.joinedAt))
-      .sort((a, b) => new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime())
+      .filter(e => visibleStatuses.includes(e.status as QueueStatus) && isPatientForToday(e.joinedAt))
+      .sort((a, b) => {
+        // 1. Pacientes recientemente llamados (durante los segundos de resaltado) al tope absoluto
+        const aRecent = calledIds.has(a._id);
+        const bRecent = calledIds.has(b._id);
+        if (aRecent && !bRecent) return -1;
+        if (!aRecent && bRecent) return 1;
+
+        // 2. Pacientes con estado CALLED antes que WAITING
+        const aCalled = a.status === QueueStatus.CALLED;
+        const bCalled = b.status === QueueStatus.CALLED;
+        if (aCalled && !bCalled) return -1;
+        if (!aCalled && bCalled) return 1;
+
+        // Si ambos están en CALLED, el más recientemente llamado primero
+        if (aCalled && bCalled) {
+          const aTime = a.calledAt ? new Date(a.calledAt).getTime() : 0;
+          const bTime = b.calledAt ? new Date(b.calledAt).getTime() : 0;
+          if (aTime !== bTime) return bTime - aTime;
+        }
+
+        // 3. Pacientes en WAITING por orden de llegada histórica
+        return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
+      })
       .map(entry => {
         const prof = profs.get(entry.professionalId);
         const profName = prof ? `${prof.firstName} ${prof.lastName}` : 'Profesional asignado';
@@ -82,6 +116,7 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
           office,
           joinedAt: entry.joinedAt,
           joinedTime,
+          status: entry.status,
         };
       });
   });
@@ -149,21 +184,125 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
       }
     );
 
-    // Cuando un paciente es llamado (CALLED), inicia (IN_ATTENTION), completa o cancela
-    const offUpdated = (event: string) => {
-      return this.socketService.on<QueueEntry>(event, (updated) => {
+    // Cuando un paciente es llamado (CALLED) -> actualizar y resaltar visualmente en TV por unos segundos
+    const offCalled = this.socketService.on<QueueEntry>(
+      QUEUE_EVENTS.PATIENT_CALLED,
+      (updated) => {
         this.allEntries.update(list =>
           list.map(e => (e._id === updated._id ? { ...e, ...updated } : e))
         );
+        this.triggerCallHighlight(updated._id);
+      }
+    );
+
+    // Cuando un paciente inicia atención (IN_ATTENTION) -> actualizar estado (se oculta automáticamente de la TV)
+    const offStarted = this.socketService.on<QueueEntry>(
+      QUEUE_EVENTS.PATIENT_STARTED,
+      (updated) => {
+        this.allEntries.update(list =>
+          list.map(e => (e._id === updated._id ? { ...e, ...updated } : e))
+        );
+        this.clearCallHighlight(updated._id);
+      }
+    );
+
+    // Cuando un paciente completa o cancela -> remover de inmediato
+    const offRemove = (event: string) => {
+      return this.socketService.on<QueueEntry>(event, (removed) => {
+        this.allEntries.update(list => list.filter(e => e._id !== removed._id));
+        this.clearCallHighlight(removed._id);
       });
     };
 
-    const offCalled = offUpdated(QUEUE_EVENTS.PATIENT_CALLED);
-    const offStarted = offUpdated(QUEUE_EVENTS.PATIENT_STARTED);
-    const offCompleted = offUpdated(QUEUE_EVENTS.PATIENT_COMPLETED);
-    const offCancelled = offUpdated(QUEUE_EVENTS.PATIENT_CANCELLED);
+    const offCompleted = offRemove(QUEUE_EVENTS.PATIENT_COMPLETED);
+    const offCancelled = offRemove(QUEUE_EVENTS.PATIENT_CANCELLED);
 
     this.socketCleanups = [offAdded, offCalled, offStarted, offCompleted, offCancelled];
+  }
+
+  /**
+   * Resalta por 8 segundos al paciente llamado y reproduce un sonido de campana de sala de espera.
+   */
+  triggerCallHighlight(entryId: string): void {
+    if (this.callTimeouts.has(entryId)) {
+      clearTimeout(this.callTimeouts.get(entryId));
+    }
+
+    this.recentlyCalledIds.update(set => {
+      const next = new Set(set);
+      next.add(entryId);
+      return next;
+    });
+
+    this.playCallChime();
+
+    // Desplazar suavemente al tope para que el paciente llamado sea visible de inmediato
+    setTimeout(() => {
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const container = document.querySelector('.table-container');
+        if (container) {
+          container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } catch {
+        // En caso de SSR o restricciones del navegador
+      }
+    }, 50);
+
+    const timer = setTimeout(() => {
+      this.clearCallHighlight(entryId);
+    }, 8000);
+
+    this.callTimeouts.set(entryId, timer);
+  }
+
+  clearCallHighlight(entryId: string): void {
+    if (this.callTimeouts.has(entryId)) {
+      clearTimeout(this.callTimeouts.get(entryId));
+      this.callTimeouts.delete(entryId);
+    }
+    this.recentlyCalledIds.update(set => {
+      if (!set.has(entryId)) return set;
+      const next = new Set(set);
+      next.delete(entryId);
+      return next;
+    });
+  }
+
+  isRecentlyCalled(id: string): boolean {
+    return this.recentlyCalledIds().has(id);
+  }
+
+  /** Chime acústico armonioso de dos tonos (Ding-Dong) para sala de espera */
+  private playCallChime(): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const playTone = (freq: number, start: number, dur: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.25, start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur);
+      };
+
+      const now = ctx.currentTime;
+      playTone(659.25, now, 0.7);        // Nota E5 (Ding)
+      playTone(523.25, now + 0.35, 1.1);  // Nota C5 (Dong)
+    } catch {
+      // Si el navegador bloquea audio por políticas de interacción, continúa silenciosamente
+    }
   }
 
   get formattedDate(): string {
@@ -191,6 +330,8 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.clockInterval) clearInterval(this.clockInterval);
     if (this.syncInterval) clearInterval(this.syncInterval);
+    this.callTimeouts.forEach(t => clearTimeout(t));
+    this.callTimeouts.clear();
     this.socketCleanups.forEach(cleanup => cleanup());
     this.socketService.leaveTvRoom();
   }

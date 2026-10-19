@@ -93,16 +93,34 @@ export class QueueService implements OnDestroy {
   /** Llama a un paciente (WAITING → CALLED) */
   async callPatient(entryId: string): Promise<void> {
     try {
-      await firstValueFrom(
+      const response = await firstValueFrom(
         this.http.patch<ApiResponse<QueueEntry>>(`${this.apiBase}/${entryId}/call`, {})
       );
+      if (response.success && response.data) {
+        this.updateEntryInList(response.data);
+      }
     } catch (error) {
       logger.error('[QueueService] Error llamando paciente:', error);
       throw error;
     }
   }
 
-  /** Completa la atención de un paciente */
+  /** Inicia la atención de un paciente (CALLED → IN_ATTENTION) */
+  async startAttention(entryId: string): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.patch<ApiResponse<QueueEntry>>(`${this.apiBase}/${entryId}/start`, {})
+      );
+      if (response.success && response.data) {
+        this.updateEntryInList(response.data);
+      }
+    } catch (error) {
+      logger.error('[QueueService] Error iniciando atención:', error);
+      throw error;
+    }
+  }
+
+  /** Completa la atención de un paciente (IN_ATTENTION → COMPLETED) */
   async completeAttention(entryId: string): Promise<void> {
     try {
       await firstValueFrom(

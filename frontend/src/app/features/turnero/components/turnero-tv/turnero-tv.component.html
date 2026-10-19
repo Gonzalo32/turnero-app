@@ -50,13 +50,35 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of waitingPatients(); let i = index; trackBy: trackById" class="patient-row">
+            <tr
+              *ngFor="let p of waitingPatients(); let i = index; trackBy: trackById"
+              class="patient-row"
+              [class.patient-row--called]="isRecentlyCalled(p._id)"
+              [class.patient-row--status-called]="p.status === 'CALLED'"
+            >
               <td class="col-order">
-                <span class="order-badge">{{ i + 1 }}</span>
+                <span class="order-badge" [class.order-badge--called]="isRecentlyCalled(p._id)">
+                  <svg *ngIf="isRecentlyCalled(p._id)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <span *ngIf="!isRecentlyCalled(p._id)">{{ i + 1 }}</span>
+                </span>
               </td>
               <td class="col-patient">
                 <div class="patient-info">
-                  <span class="patient-fullname">{{ p.patientLastName | uppercase }}, {{ p.patientFirstName }}</span>
+                  <div class="patient-name-line">
+                    <span class="patient-fullname">{{ p.patientLastName | uppercase }}, {{ p.patientFirstName }}</span>
+                    <!-- Indicador activo los primeros segundos del llamado -->
+                    <span class="called-tag" *ngIf="isRecentlyCalled(p._id)">
+                      <span class="called-tag-dot"></span>
+                      ¡LLAMADO!
+                    </span>
+                    <!-- Indicador si ya pasaron los segundos pero el estado sigue siendo CALLED -->
+                    <span class="status-called-tag" *ngIf="!isRecentlyCalled(p._id) && p.status === 'CALLED'">
+                      Llamado
+                    </span>
+                  </div>
                   <span class="patient-meta" *ngIf="p.healthInsurance">Cobertura: {{ p.healthInsurance }}</span>
                 </div>
               </td>
@@ -67,7 +89,11 @@
                 </div>
               </td>
               <td class="col-office">
-                <span class="office-pill" [class.office-pill--assigned]="p.office !== 'Consultorio --'">
+                <span
+                  class="office-pill"
+                  [class.office-pill--assigned]="p.office !== 'Consultorio --'"
+                  [class.office-pill--called]="isRecentlyCalled(p._id)"
+                >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <path d="M9 3v18"/>
