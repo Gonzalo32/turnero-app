@@ -28,6 +28,7 @@ export interface CreateQueueEntryDto {
   patientDni: string;
   healthInsurance?: string;
   professionalId: string;
+  office?: string;
   source?: QueueSource;
   sourceRecordId?: string;
 }
@@ -41,6 +42,7 @@ export interface QueueEntryPublic {
   healthInsurance: string;
   patientId: Types.ObjectId | string;
   professionalId: Types.ObjectId | string;
+  office?: string;
   status: QueueStatus;
   visitNumber: number;
   joinedAt: Date;

@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SessionService } from '../../core/services/session.service';
@@ -17,6 +17,19 @@ export class DashboardComponent {
 
   readonly professional = this.session.professional;
   readonly office = this.session.office;
+
+  /** Estado de colapso de la barra lateral (persiste preferencia local) */
+  readonly isCollapsed = signal<boolean>(
+    typeof localStorage !== 'undefined' && localStorage.getItem('sidebar_collapsed') === 'true'
+  );
+
+  toggleSidebar(): void {
+    const next = !this.isCollapsed();
+    this.isCollapsed.set(next);
+    try {
+      localStorage.setItem('sidebar_collapsed', String(next));
+    } catch {}
+  }
 
   readonly professionalName = computed(() => {
     const p = this.professional();

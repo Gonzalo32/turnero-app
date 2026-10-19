@@ -27,6 +27,9 @@ export interface IQueueEntry extends Document {
   /** Referencia al profesional por ID (nunca por nombre string) */
   professionalId: Types.ObjectId;
 
+  /** Consultorio asignado */
+  office?: string;
+
   /** Estado actual en la cola */
   status: QueueStatus;
 
@@ -62,6 +65,8 @@ const QueueEntrySchema = new Schema<IQueueEntry>(
       ref: 'Professional',
       required: true,
     },
+
+    office: { type: String, trim: true },
 
     status: {
       type: String,
