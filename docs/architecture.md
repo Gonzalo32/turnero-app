@@ -124,16 +124,15 @@ backend/src/
 ├── middlewares/
 │   └── error.middleware.ts      # Manejo centralizado de errores HTTP
 │
-├── migrations/
-│   └── queue-entries.migration.ts  # npm run migrate:queue (simulación; --apply escribe)
-│
 ├── modules/                     # Cada dominio tiene su módulo
+│   ├── atenciones/
+│   │   └── atencion.model.ts    # Colección 'atenciones': cada visita (cola + historial)
+│   │
 │   ├── patients/
-│   │   └── patient.model.ts     # Solo identidad (dni, nombre, apellido, origen)
+│   │   └── patient.model.ts     # Colección 'pacientes': datos filiatorios + origen
 │   │
 │   ├── queue/                   # Módulo: Cola de espera
 │   │   ├── queue.controller.ts  # Lee request → llama service → responde HTTP
-│   │   ├── queue.model.ts       # QueueEntry: estado operativo de cada visita
 │   │   ├── queue.routes.ts      # Define rutas /api/v1/queue
 │   │   ├── queue.service.ts     # Lógica de negocio; emite eventos después de persistir
 │   │   ├── queue.socket.ts      # Emisión de eventos Socket.IO
