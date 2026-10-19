@@ -27,6 +27,7 @@ export interface QueueEntry {
   patientDni: string;
   healthInsurance: string;
   professionalId: string;
+  office?: string;
   status: QueueStatus;
   /** Número de visita del paciente */
   visitNumber: number;
@@ -44,6 +45,9 @@ export interface Professional {
   firstName: string;
   lastName: string;
   licenseNumber?: string;
+  office?: string;
+  specialty?: string;
+  colorTag?: string;
   active: boolean;
 }
 

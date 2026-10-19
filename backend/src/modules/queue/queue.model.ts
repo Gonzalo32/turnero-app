@@ -19,13 +19,16 @@ export interface IQueueEntry extends Document {
   healthInsurance: string;
 
   /** Paciente del sistema al que pertenece la entrada */
-  patientId: Types.ObjectId;
+  patientId?: Types.ObjectId;
 
   /** Número de visita del paciente (histórico, se fija al crear la entrada) */
   visitNumber: number;
 
   /** Referencia al profesional por ID (nunca por nombre string) */
   professionalId: Types.ObjectId;
+
+  /** Consultorio asignado */
+  office?: string;
 
   /** Estado actual en la cola */
   status: QueueStatus;
@@ -54,7 +57,7 @@ const QueueEntrySchema = new Schema<IQueueEntry>(
     patientDni: { type: String, required: true, trim: true },
     healthInsurance: { type: String, default: 'Particular', trim: true },
 
-    patientId: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
+    patientId: { type: Schema.Types.ObjectId, ref: 'Patient', required: false },
     visitNumber: { type: Number, default: 1 },
 
     professionalId: {
@@ -62,6 +65,8 @@ const QueueEntrySchema = new Schema<IQueueEntry>(
       ref: 'Professional',
       required: true,
     },
+
+    office: { type: String, trim: true },
 
     status: {
       type: String,

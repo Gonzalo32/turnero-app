@@ -22,6 +22,7 @@ export interface IProfessional extends Document {
   specialty?: string;
   colorTag?: string;
   notes?: string;
+  office?: string;
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -43,6 +44,7 @@ const ProfessionalSchema = new Schema<IProfessional>(
     specialty: { type: String, trim: true, default: 'Odontología General' },
     colorTag: { type: String, trim: true, default: '#866385' },
     notes: { type: String, trim: true },
+    office: { type: String, trim: true },
     active: { type: Boolean, default: true },
   },
   {

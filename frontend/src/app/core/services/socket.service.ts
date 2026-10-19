@@ -15,6 +15,7 @@ import { logger } from '../utils/logger';
 export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
   private professionalRoom: string | null = null;
+  private isTvRoomJoined = false;
 
   /** Estado de conexión reactivo */
   readonly connected = signal<boolean>(false);
@@ -37,6 +38,9 @@ export class SocketService implements OnDestroy {
       if (this.professionalRoom) {
         this.joinProfessionalRoom(this.professionalRoom);
       }
+      if (this.isTvRoomJoined) {
+        this.joinTvRoom();
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -56,6 +60,7 @@ export class SocketService implements OnDestroy {
       this.socket.disconnect();
       this.socket = null;
       this.professionalRoom = null;
+      this.isTvRoomJoined = false;
       this.connected.set(false);
     }
   }
@@ -76,6 +81,19 @@ export class SocketService implements OnDestroy {
       this.socket?.emit('queue:leave-professional', this.professionalRoom);
       this.professionalRoom = null;
     }
+  }
+
+  /** Une al cliente a la sala general del turnero de TV */
+  joinTvRoom(): void {
+    this.isTvRoomJoined = true;
+    this.socket?.emit('queue:join-tv');
+    logger.debug('[SocketService] Unido a sala queue:tv');
+  }
+
+  /** Sale de la sala del turnero de TV */
+  leaveTvRoom(): void {
+    this.isTvRoomJoined = false;
+    this.socket?.emit('queue:leave-tv');
   }
 
   /**

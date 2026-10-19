@@ -18,6 +18,11 @@ export const DASHBOARD_ROUTES: Routes = [
         path: 'odontologos',
         loadChildren: () =>
           import('../professionals/professionals.routes').then(m => m.PROFESSIONALS_ROUTES)
+      },
+      {
+        path: 'turnero',
+        loadChildren: () =>
+          import('../turnero/turnero.routes').then(m => m.TURNERO_ROUTES)
       }
     ]
   }
