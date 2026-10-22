@@ -1,17 +1,23 @@
-<div class="modal-backdrop" (click)="onCancel()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
+<div class="fixed inset-0 bg-[#2b252f]/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 transition-all duration-200" (click)="onCancel()">
+  <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-brand-purple/20 overflow-hidden transform transition-all duration-200" (click)="$event.stopPropagation()">
 
-    <!-- CABECERA DEL MODAL -->
-    <div class="modal-header">
-      <div class="header-text">
-        <h3 class="modal-title">
+    <!-- ═══════════════════════════════════════════════════
+         CABECERA DEL MODAL
+    ═══════════════════════════════════════════════════ -->
+    <div class="flex items-start justify-between px-6 py-5 border-b border-brand-purple/10 bg-white">
+      <div>
+        <h3 class="font-brand text-xl font-bold text-app-text tracking-tight mb-0.5">
           {{ isEditMode() ? 'Editar Odontólogo' : 'Nuevo Odontólogo' }}
         </h3>
-        <p class="modal-subtitle">
+        <p class="font-body text-xs text-app-muted">
           {{ isEditMode() ? 'Actualiza los datos del profesional' : 'Completa la ficha técnica para dar de alta al odontólogo' }}
         </p>
       </div>
-      <button class="btn-close" (click)="onCancel()" title="Cerrar">
+      <button
+        class="w-8 h-8 rounded-lg flex items-center justify-center text-app-muted hover:text-app-text hover:bg-brand-purple/10 transition-colors cursor-pointer"
+        (click)="onCancel()"
+        title="Cerrar"
+      >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -19,12 +25,14 @@
       </button>
     </div>
 
-    <!-- CUERPO DEL MODAL (FORMULARIO) -->
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+    <!-- ═══════════════════════════════════════════════════
+         CUERPO DEL MODAL (FORMULARIO)
+    ═══════════════════════════════════════════════════ -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="px-6 py-5 overflow-y-auto flex flex-col gap-5">
 
       <!-- MENSAJE DE ERROR -->
-      <div class="form-error-alert" *ngIf="errorMessage()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium" *ngIf="errorMessage()">
+        <svg class="shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -33,255 +41,203 @@
       </div>
 
       <!-- SECCIÓN 1: DATOS PERSONALES -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex flex-col gap-3.5 bg-[#fdfcfe] border border-brand-purple/10 p-4 sm:p-5 rounded-2xl">
+        <h4 class="flex items-center gap-2 font-body text-sm font-bold text-brand-purple-dark pb-2 border-b border-dashed border-brand-purple/15">
+          <svg class="text-brand-purple shrink-0" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          Datos Personales
+          <span>Datos Personales</span>
         </h4>
 
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">Nombre <span class="required">*</span></label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">
+              Nombre <span class="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('firstName')?.invalid && form.get('firstName')?.touched"
+              [class.bg-red-50]="form.get('firstName')?.invalid && form.get('firstName')?.touched"
               formControlName="firstName"
               placeholder="Ej: Martin"
-              [class.field-input--error]="form.get('firstName')?.invalid && form.get('firstName')?.touched"
             />
-            <span class="field-error" *ngIf="form.get('firstName')?.invalid && form.get('firstName')?.touched">
+            <span class="text-xs text-red-500 font-medium" *ngIf="form.get('firstName')?.invalid && form.get('firstName')?.touched">
               El nombre es obligatorio.
             </span>
           </div>
 
-          <div class="form-field">
-            <label class="field-label">Apellido <span class="required">*</span></label>
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">
+              Apellido <span class="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('lastName')?.invalid && form.get('lastName')?.touched"
+              [class.bg-red-50]="form.get('lastName')?.invalid && form.get('lastName')?.touched"
               formControlName="lastName"
               placeholder="Ej: Chaparro"
-              [class.field-input--error]="form.get('lastName')?.invalid && form.get('lastName')?.touched"
             />
-            <span class="field-error" *ngIf="form.get('lastName')?.invalid && form.get('lastName')?.touched">
+            <span class="text-xs text-red-500 font-medium" *ngIf="form.get('lastName')?.invalid && form.get('lastName')?.touched">
               El apellido es obligatorio.
             </span>
           </div>
         </div>
 
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">DNI</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">DNI</label>
             <input
               type="text"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('dni')?.invalid && form.get('dni')?.touched"
+              [class.bg-red-50]="form.get('dni')?.invalid && form.get('dni')?.touched"
               formControlName="dni"
               placeholder="Ej: 34567890"
               maxlength="9"
-              [class.field-input--error]="form.get('dni')?.invalid && form.get('dni')?.touched"
             />
-            <span class="field-error" *ngIf="form.get('dni')?.invalid && form.get('dni')?.touched">
+            <span class="text-xs text-red-500 font-medium" *ngIf="form.get('dni')?.invalid && form.get('dni')?.touched">
               Ingrese un DNI válido (7 a 9 dígitos numéricos).
             </span>
           </div>
 
-          <div class="form-field">
-            <label class="field-label">Fecha de Nacimiento</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">Fecha de Nacimiento</label>
             <input
               type="date"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 text-app-text focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
               formControlName="birthDate"
             />
           </div>
         </div>
       </div>
 
-      <!-- SECCIÓN 2: DATOS PROFESIONALES -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- SECCIÓN 2: DATOS PROFESIONALES Y CONTACTO -->
+      <div class="flex flex-col gap-3.5 bg-[#fdfcfe] border border-brand-purple/10 p-4 sm:p-5 rounded-2xl">
+        <h4 class="flex items-center gap-2 font-body text-sm font-bold text-brand-purple-dark pb-2 border-b border-dashed border-brand-purple/15">
+          <svg class="text-brand-purple shrink-0" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
           </svg>
-          Datos Profesionales
+          <span>Datos Profesionales y Contacto</span>
         </h4>
 
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">Matrícula / N° Profesional</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">
+              Matrícula / N° Profesional <span class="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched"
+              [class.bg-red-50]="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched"
               formControlName="licenseNumber"
               placeholder="Ej: MN 45892 o MP 1234"
             />
+            <span class="text-xs text-red-500 font-medium" *ngIf="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched">
+              La matrícula es obligatoria.
+            </span>
           </div>
 
-          <div class="form-field">
-            <label class="field-label">Especialidad <span class="required">*</span></label>
-            <select class="field-select" formControlName="specialty">
-              <option *ngFor="let s of specialties" [value]="s">{{ s }}</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Color de identificación para la agenda/turnero -->
-        <div class="form-field">
-          <label class="field-label">Color de Identificación (Agenda y Turnero)</label>
-          <div class="color-palette">
-            <button
-              type="button"
-              *ngFor="let c of presetColors"
-              class="color-chip"
-              [style.background-color]="c.value"
-              [class.color-chip--active]="form.get('colorTag')?.value === c.value"
-              (click)="selectColor(c.value)"
-              [title]="c.label"
-            >
-              <svg *ngIf="form.get('colorTag')?.value === c.value" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </button>
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">
+              Correo Electrónico <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('email')?.invalid && form.get('email')?.touched"
+              [class.bg-red-50]="form.get('email')?.invalid && form.get('email')?.touched"
+              formControlName="email"
+              placeholder="Ej: odontologo&#64;senza.com"
+            />
+            <span class="text-xs text-red-500 font-medium" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+              Ingrese un correo electrónico válido.
+            </span>
           </div>
         </div>
-      </div>
 
-      <!-- SECCIÓN 3: CONTACTO Y DOMICILIO -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-          </svg>
-          Contacto y Domicilio
-        </h4>
-
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">Teléfono</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">Teléfono</label>
             <input
               type="tel"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
               formControlName="phone"
               placeholder="Ej: +54 9 11 2345-6789"
             />
           </div>
 
-          <div class="form-field">
-            <label class="field-label">Dirección</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">Dirección</label>
             <input
               type="text"
-              class="field-input"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
               formControlName="address"
               placeholder="Ej: Av. Santa Fe 1234, CABA"
             />
           </div>
         </div>
+      </div>
 
-        <div class="form-field">
-          <label class="field-label">Correo Electrónico</label>
-          <input
-            type="email"
-            class="field-input"
-            formControlName="email"
-            placeholder="Ej: odontologo@senza.com"
-            [class.field-input--error]="form.get('email')?.invalid && form.get('email')?.touched"
-          />
-          <span class="field-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
-            Ingrese un correo electrónico válido.
+      <!-- SECCIÓN 3: ACCESO Y SEGURIDAD -->
+      <div class="flex flex-col gap-3.5 bg-[#fdfcfe] border border-brand-purple/10 p-4 sm:p-5 rounded-2xl">
+        <h4 class="flex items-center gap-2 font-body text-sm font-bold text-brand-purple-dark pb-2 border-b border-dashed border-brand-purple/15">
+          <svg class="text-brand-purple shrink-0" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Acceso al Sistema</span>
+          <span class="text-xs font-normal text-app-muted ml-1" *ngIf="isEditMode()">(Dejar en blanco para mantener la actual)</span>
+        </h4>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">
+            Contraseña <span class="text-red-500" *ngIf="!isEditMode()">*</span>
+          </label>
+          <div class="relative flex items-center">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              class="w-full pr-10 pl-3.5 py-2.5 rounded-xl border border-brand-purple/20 bg-white font-body text-sm text-app-text outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/15"
+              [class.border-red-400]="form.get('password')?.invalid && form.get('password')?.touched"
+              [class.bg-red-50]="form.get('password')?.invalid && form.get('password')?.touched"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-app-muted hover:text-brand-purple cursor-pointer p-1 transition-colors"
+              (click)="togglePasswordVisibility()"
+              title="Mostrar / ocultar contraseña"
+            >
+              <!-- Ojo visible -->
+              <svg *ngIf="!showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <!-- Ojo tachado -->
+              <svg *ngIf="showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+          <span class="text-xs text-red-500 font-medium" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+            La contraseña debe tener al menos 6 caracteres.
           </span>
         </div>
       </div>
 
-      <!-- SECCIÓN 4: ACCESO Y SEGURIDAD -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          Acceso al Sistema
-          <span class="optional-badge" *ngIf="isEditMode()">(Dejar en blanco para mantener actual)</span>
-        </h4>
-
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">
-              Contraseña
-              <span class="required" *ngIf="!isEditMode()">*</span>
-            </label>
-            <div class="password-wrapper">
-              <input
-                [type]="showPassword() ? 'text' : 'password'"
-                class="field-input"
-                formControlName="password"
-                placeholder="Mínimo 6 caracteres"
-                [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched"
-              />
-              <button
-                type="button"
-                class="btn-toggle-eye"
-                (click)="togglePasswordVisibility()"
-                title="Mostrar / ocultar"
-              >
-                <!-- Ojo visible -->
-                <svg *ngIf="!showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <!-- Ojo tachado -->
-                <svg *ngIf="showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            <span class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-              La contraseña debe tener al menos 6 caracteres.
-            </span>
-          </div>
-
-          <div class="form-field">
-            <label class="field-label">Confirmar Contraseña</label>
-            <input
-              [type]="showPassword() ? 'text' : 'password'"
-              class="field-input"
-              formControlName="confirmPassword"
-              placeholder="Repite la contraseña"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN 5: OBSERVACIONES -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-          Observaciones Internas
-        </h4>
-
-        <div class="form-field">
-          <textarea
-            class="field-textarea"
-            formControlName="notes"
-            rows="3"
-            placeholder="Horarios preferentes, disponibilidad, notas clínicas..."
-          ></textarea>
-        </div>
-      </div>
-
-      <!-- BOTONES DE ACCIÓN FOOTER -->
-      <div class="modal-footer">
+      <!-- ═══════════════════════════════════════════════════
+           BOTONES DE ACCIÓN FOOTER
+      ═══════════════════════════════════════════════════ -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-purple/10">
         <button
           type="button"
-          class="btn-cancel"
+          class="px-4 py-2.5 rounded-xl border border-brand-purple/25 bg-white text-app-text font-body text-sm font-semibold hover:bg-brand-purple/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
           (click)="onCancel()"
           [disabled]="saving()"
         >
@@ -290,10 +246,10 @@
 
         <button
           type="submit"
-          class="btn-submit"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-purple to-brand-purple-dark hover:from-brand-purple-light hover:to-brand-purple text-white font-bold text-sm shadow-md shadow-brand-purple/25 hover:shadow-lg hover:shadow-brand-purple/35 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200 cursor-pointer"
           [disabled]="saving()"
         >
-          <div class="btn-spinner" *ngIf="saving()"></div>
+          <div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" *ngIf="saving()"></div>
           <span>{{ isEditMode() ? 'Actualizar Odontólogo' : 'Guardar Odontólogo' }}</span>
         </button>
       </div>

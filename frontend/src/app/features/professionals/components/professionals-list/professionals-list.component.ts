@@ -10,8 +10,7 @@ import { ProfessionalFormModalComponent } from '../professional-form-modal/profe
   selector: 'app-professionals-list',
   standalone: true,
   imports: [CommonModule, DataTableComponent, ProfessionalFormModalComponent],
-  templateUrl: './professionals-list.component.html',
-  styleUrl: './professionals-list.component.scss'
+  templateUrl: './professionals-list.component.html'
 })
 export class ProfessionalsListComponent implements OnInit {
   private professionalsService = inject(ProfessionalsService);

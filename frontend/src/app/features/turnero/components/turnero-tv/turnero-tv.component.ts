@@ -36,6 +36,7 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
   readonly professionalsMap = signal<Map<string, Professional>>(new Map());
   readonly loading = signal<boolean>(true);
   readonly currentTime = signal<Date>(new Date());
+  readonly QueueStatus = QueueStatus;
 
   /** Pacientes recientemente llamados para resaltar visualmente en TV */
   readonly recentlyCalledIds = signal<Set<string>>(new Set());

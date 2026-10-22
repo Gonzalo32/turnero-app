@@ -54,7 +54,7 @@
               *ngFor="let p of waitingPatients(); let i = index; trackBy: trackById"
               class="patient-row"
               [class.patient-row--called]="isRecentlyCalled(p._id)"
-              [class.patient-row--status-called]="p.status === 'CALLED'"
+              [class.patient-row--status-called]="p.status === QueueStatus.CALLED"
             >
               <td class="col-order">
                 <span class="order-badge" [class.order-badge--called]="isRecentlyCalled(p._id)">
@@ -75,7 +75,7 @@
                       ¡LLAMADO!
                     </span>
                     <!-- Indicador si ya pasaron los segundos pero el estado sigue siendo CALLED -->
-                    <span class="status-called-tag" *ngIf="!isRecentlyCalled(p._id) && p.status === 'CALLED'">
+                    <span class="status-called-tag" *ngIf="!isRecentlyCalled(p._id) && p.status === QueueStatus.CALLED">
                       Llamado
                     </span>
                   </div>

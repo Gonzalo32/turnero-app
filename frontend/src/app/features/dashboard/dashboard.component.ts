@@ -8,8 +8,7 @@ import { professionalFullName } from '../queue/models/queue.model';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent {
   private session = inject(SessionService);
