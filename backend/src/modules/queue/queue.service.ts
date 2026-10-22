@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { Patient } from '../patients/patient.model';
+import { Professional } from '../professionals/professional.model';
 import { QueueEntry, IQueueEntry } from './queue.model';
 import { QueueStatus, QueueSource, CreateQueueEntryDto, ACTIVE_QUEUE_STATUSES } from './queue.types';
 import { createError } from '../../middlewares/error.middleware';
@@ -90,6 +91,9 @@ export class QueueService {
       logger.info(`[QueueService] Paciente ${patient._id} transferido de ${active.professionalId} a ${professionalId}`);
     }
 
+    const prof = await Professional.findById(professionalId);
+    const office = dto.office?.trim() || prof?.office || '';
+
     const previousVisits = await QueueEntry.countDocuments({ patientId: patient._id });
     const entry = await QueueEntry.create({
       patientId: patient._id,
@@ -98,6 +102,7 @@ export class QueueService {
       patientDni: dni,
       healthInsurance: dto.healthInsurance?.trim() || 'Particular',
       professionalId,
+      office,
       status: QueueStatus.WAITING,
       source,
       sourceRecordId: dto.sourceRecordId,
@@ -106,7 +111,7 @@ export class QueueService {
     });
 
     emitPatientAdded(entry);
-    logger.info(`[QueueService] Entrada creada: ${entry._id} (visita #${entry.visitNumber})`);
+    logger.info(`[QueueService] Entrada creada: ${entry._id} (visita #${entry.visitNumber}) en ${office || 'sin consultorio'}`);
     return { entry, created: true, transferredFrom };
   }
 

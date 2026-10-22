@@ -16,6 +16,7 @@ export interface CreateProfessionalDto {
   specialty?: string;
   colorTag?: string;
   notes?: string;
+  office?: string;
 }
 
 export interface UpdateProfessionalDto extends Partial<CreateProfessionalDto> {
@@ -76,6 +77,7 @@ export class ProfessionalService {
       specialty: data.specialty?.trim() || 'Odontología General',
       colorTag: data.colorTag?.trim() || '#866385',
       notes: data.notes?.trim(),
+      office: data.office?.trim(),
       active: true,
     });
 
@@ -103,6 +105,7 @@ export class ProfessionalService {
     if (data.specialty !== undefined) prof.specialty = data.specialty?.trim();
     if (data.colorTag !== undefined) prof.colorTag = data.colorTag?.trim();
     if (data.notes !== undefined) prof.notes = data.notes?.trim();
+    if (data.office !== undefined) prof.office = data.office?.trim();
     if (data.active !== undefined) prof.active = data.active;
 
     if (data.email) {

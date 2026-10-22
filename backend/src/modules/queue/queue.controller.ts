@@ -44,6 +44,7 @@ export async function addToQueue(req: Request, res: Response, next: NextFunction
       patientDni: req.body.patientDni,
       healthInsurance: req.body.healthInsurance,
       professionalId: req.body.professionalId,
+      office: req.body.office,
       source: QueueSource.MANUAL,
     };
     const { entry, created } = await queueService.addToQueue(dto);

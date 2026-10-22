@@ -55,13 +55,23 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  login(): void {
+  async login(): Promise<void> {
     if (!this.canLogin()) return;
 
     const prof = this.professionals().find(p => p._id === this.selectedProfId());
     if (!prof) return;
 
-    this.session.login(prof, this.selectedOffice());
+    const office = this.selectedOffice();
+    this.session.login(prof, office);
+
+    try {
+      await firstValueFrom(
+        this.http.put(`${environment.apiUrl}/professionals/${prof._id}`, { office })
+      );
+    } catch {
+      // Si falla la red, la sesión local se mantiene
+    }
+
     this.router.navigate(['/dashboard']);
   }
 
