@@ -98,8 +98,8 @@ export class QueueListComponent implements OnInit, OnDestroy {
   }
 
   /** Permite re-llamar al paciente si ya estaba en estado CALLED */
-  async reCallPatient(entry: QueueEntry, event: Event): Promise<void> {
-    event.stopPropagation();
+  async reCallPatient(entry: QueueEntry, event?: Event): Promise<void> {
+    if (event) event.stopPropagation();
     if (this.processingId() === entry._id) return;
     this.processingId.set(entry._id);
 
@@ -131,6 +131,10 @@ export class QueueListComponent implements OnInit, OnDestroy {
 
   minutesWaiting(isoDate: string): number {
     return Math.floor((Date.now() - new Date(isoDate).getTime()) / 60000);
+  }
+
+  isUrgent(isoDate: string): boolean {
+    return this.minutesWaiting(isoDate) >= 15;
   }
 
   trackByEntryId(_: number, e: QueueEntry): string { return e._id; }

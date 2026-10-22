@@ -25,7 +25,7 @@
         stroke-linecap="round"
         stroke-linejoin="round"
         class="transition-transform duration-300"
-        [class.rotate-180]="isCollapsed()"
+        [ngClass]="isCollapsed() ? 'rotate-180' : ''"
       >
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
@@ -52,7 +52,7 @@
         class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-app-muted font-semibold text-sm transition-all duration-200 cursor-pointer hover:bg-brand-purple/10 hover:text-brand-purple"
         [ngClass]="isCollapsed() ? 'justify-center' : ''"
         routerLink="/dashboard/pacientes"
-        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold [&>svg]:text-brand-purple-dark"
+        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold"
         id="nav-cola-espera"
         title="Cola de espera"
       >
@@ -70,7 +70,7 @@
         class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-app-muted font-semibold text-sm transition-all duration-200 cursor-pointer hover:bg-brand-purple/10 hover:text-brand-purple"
         [ngClass]="isCollapsed() ? 'justify-center' : ''"
         routerLink="/dashboard/turnero"
-        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold [&>svg]:text-brand-purple-dark"
+        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold"
         id="nav-turnero"
         title="Turnero"
       >
@@ -86,7 +86,7 @@
         class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-app-muted font-semibold text-sm transition-all duration-200 cursor-pointer hover:bg-brand-purple/10 hover:text-brand-purple"
         [ngClass]="isCollapsed() ? 'justify-center' : ''"
         routerLink="/dashboard/odontologos"
-        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold [&>svg]:text-brand-purple-dark"
+        routerLinkActive="bg-brand-purple/15 text-brand-purple-dark font-bold"
         id="nav-odontologos"
         title="Odontólogos"
       >

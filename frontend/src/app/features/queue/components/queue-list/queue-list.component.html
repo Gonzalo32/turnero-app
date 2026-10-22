@@ -27,7 +27,7 @@
       <!-- Contador -->
       <div
         class="flex flex-col items-center border rounded-xl px-3 py-1 min-w-[70px] transition-colors"
-        [ngClass]="totalWaiting() === 0 ? 'bg-black/[0.02] border-black/[0.06]' : 'bg-brand-purple/10 border-brand-purple/20'"
+        [ngClass]="totalWaiting() === 0 ? 'bg-slate-50 border-slate-200' : 'bg-brand-purple/10 border-brand-purple/20'"
       >
         <span class="text-xl font-extrabold text-brand-purple-dark leading-none">{{ totalWaiting() }}</span>
         <span class="text-[10px] text-app-muted uppercase tracking-wider font-bold mt-0.5">{{ totalWaiting() === 1 ? 'paciente' : 'pacientes' }}</span>
@@ -59,17 +59,24 @@
   ══════════════════════════════════════════════════════════════════════════════ -->
   <div class="flex flex-col gap-3.5" *ngIf="totalWaiting() > 0">
     <div
-      class="flex flex-wrap sm:flex-nowrap items-center gap-4 bg-app-card border border-brand-purple/15 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-brand-purple/30 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:rounded-l"
+      class="flex flex-wrap sm:flex-nowrap items-center gap-4 bg-app-card border border-brand-purple/15 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-brand-purple/30 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden"
       *ngFor="let entry of sortedEntries(); trackBy: trackByEntryId; let i = index"
-      [ngClass]="{
-        'before:bg-gradient-to-b before:from-brand-purple before:to-brand-purple-light': minutesWaiting(entry.joinedAt) < 15 && entry.status !== QueueStatus.CALLED && entry.status !== QueueStatus.IN_ATTENTION,
-        'before:bg-gradient-to-b before:from-amber-500 before:to-red-500': minutesWaiting(entry.joinedAt) >= 15,
-        'before:bg-gradient-to-b before:from-indigo-500 before:to-purple-500': entry.status === QueueStatus.CALLED,
-        'before:bg-gradient-to-b before:from-emerald-500 before:to-emerald-600': entry.status === QueueStatus.IN_ATTENTION,
-        'ring-2 ring-brand-purple/20 shadow-lg': entry._id === lastNewEntryId()
-      }"
+      [class.ring-2]="entry._id === lastNewEntryId()"
+      [class.ring-brand-purple-30]="entry._id === lastNewEntryId()"
+      [class.shadow-lg]="entry._id === lastNewEntryId()"
       [id]="'entry-' + entry._id"
     >
+      <!-- Indicador lateral de color según estado -->
+      <div
+        class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l"
+        [ngClass]="{
+          'bg-gradient-to-b from-brand-purple to-brand-purple-light': !isUrgent(entry.joinedAt) && entry.status !== QueueStatus.CALLED && entry.status !== QueueStatus.IN_ATTENTION,
+          'bg-gradient-to-b from-amber-500 to-red-500': isUrgent(entry.joinedAt),
+          'bg-gradient-to-b from-indigo-500 to-purple-500': entry.status === QueueStatus.CALLED,
+          'bg-gradient-to-b from-emerald-500 to-emerald-600': entry.status === QueueStatus.IN_ATTENTION
+        }"
+      ></div>
+
       <!-- Número de orden -->
       <div class="w-10 h-10 rounded-full bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-base font-bold text-brand-purple-dark shrink-0">
         {{ i + 1 }}
@@ -100,7 +107,7 @@
           >
             {{ statusLabel(entry.status) }}
           </span>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-50 text-pink-700 border border-pink-200" *ngIf="entry.visitNumber > 1" title="Número de visita del paciente">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-50 text-pink-700 border border-pink-200" *ngIf="entry.visitNumber >= 2" title="Número de visita del paciente">
             Visita #{{ entry.visitNumber }}
           </span>
         </div>
@@ -111,7 +118,7 @@
         <span class="text-sm font-semibold text-app-muted">{{ formatTime(entry.joinedAt) }}</span>
         <span
           class="text-xs font-semibold"
-          [ngClass]="minutesWaiting(entry.joinedAt) >= 15 ? 'text-orange-600 font-bold' : 'text-brand-purple'"
+          [ngClass]="isUrgent(entry.joinedAt) ? 'text-orange-600 font-bold' : 'text-brand-purple'"
         >
           {{ minutesWaiting(entry.joinedAt) }} min
         </span>
@@ -157,7 +164,7 @@
           <button
             class="flex items-center justify-center gap-1 py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-xl text-xs font-bold cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             [disabled]="processingId() === entry._id"
-            (click)="reCallPatient(entry, $event)"
+            (click)="reCallPatient(entry)"
             [id]="'btn-recall-' + entry._id"
             title="Hacer sonar nuevamente el llamado en turnero TV"
           >
