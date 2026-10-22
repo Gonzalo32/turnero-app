@@ -11,8 +11,7 @@ import { TableColumn, TableAction } from './data-table.model';
   selector: 'app-data-table',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './data-table.component.html',
-  styleUrl: './data-table.component.scss'
+  templateUrl: './data-table.component.html'
 })
 export class DataTableComponent<T = any> {
   /** Columnas a renderizar */

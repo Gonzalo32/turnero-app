@@ -1,101 +1,111 @@
-<div class="table-container">
+<div class="flex flex-col bg-app-card border border-brand-purple/15 rounded-2xl overflow-hidden shadow-sm transition-colors">
 
-  <!-- BARRA SUPERIOR: Buscador y Contador -->
-  <div class="table-toolbar" *ngIf="searchable()">
-    <div class="search-box">
-      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <!-- ═══════════════════════════════════════════════════
+       BARRA SUPERIOR: Buscador y Contador
+  ═══════════════════════════════════════════════════ -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-brand-purple/10 bg-white gap-3 sm:gap-4" *ngIf="searchable()">
+    <div class="flex items-center bg-[#fbfafc] border border-brand-purple/20 rounded-xl px-3.5 py-2 w-full max-w-sm transition-all focus-within:border-brand-purple focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-purple/15">
+      <svg class="text-app-muted mr-2.5 shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"></circle>
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
       <input
         type="text"
-        class="search-input"
+        class="border-none bg-transparent outline-none font-body text-sm text-app-text w-full placeholder:text-gray-400"
         [placeholder]="searchPlaceholder()"
         [ngModel]="searchTerm()"
         (ngModelChange)="searchTerm.set($event)"
       />
       <button
         *ngIf="searchTerm()"
-        class="search-clear"
+        class="border-none bg-brand-purple/10 text-app-muted w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-purple/20 hover:text-app-text transition-all shrink-0 ml-1"
         (click)="searchTerm.set('')"
         title="Limpiar búsqueda"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
     </div>
 
-    <div class="record-counter">
-      <span class="counter-number">{{ filteredData().length }}</span>
-      <span class="counter-label">{{ countLabel() }}</span>
+    <div class="flex items-center gap-2 bg-brand-purple/10 border border-brand-purple/20 rounded-xl px-3 py-1.5 shrink-0 self-start sm:self-auto">
+      <span class="font-body text-base font-extrabold text-brand-purple-dark leading-none">{{ filteredData().length }}</span>
+      <span class="font-body text-xs font-semibold text-app-muted uppercase tracking-wider">{{ countLabel() }}</span>
     </div>
   </div>
 
-  <!-- ESTADO DE CARGA -->
-  <div class="table-loading" *ngIf="loading()">
-    <div class="loading-spinner"></div>
+  <!-- ═══════════════════════════════════════════════════
+       ESTADO DE CARGA
+  ═══════════════════════════════════════════════════ -->
+  <div class="flex flex-col items-center justify-center py-14 px-4 gap-4 text-app-muted text-sm font-medium" *ngIf="loading()">
+    <div class="w-8 h-8 border-3 border-brand-purple/15 border-t-brand-purple rounded-full animate-spin"></div>
     <span>Cargando datos...</span>
   </div>
 
-  <!-- TABLA PRINCIPAL -->
-  <div class="table-responsive" *ngIf="!loading()">
-    <table class="custom-table">
+  <!-- ═══════════════════════════════════════════════════
+       TABLA PRINCIPAL
+  ═══════════════════════════════════════════════════ -->
+  <div class="w-full overflow-x-auto" *ngIf="!loading()">
+    <table class="w-full border-collapse text-left font-body">
       <thead>
-        <tr>
+        <tr class="bg-[#fbfafc] border-b border-brand-purple/10">
           <th
             *ngFor="let col of columns()"
             [style.width]="col.width || 'auto'"
             [style.text-align]="col.align || 'left'"
+            class="px-6 py-3.5 text-xs font-bold text-app-muted uppercase tracking-wider select-none whitespace-nowrap"
           >
             {{ col.header }}
           </th>
-          <th *ngIf="actions().length > 0" class="actions-header" style="text-align: right; width: 60px;"></th>
+          <th *ngIf="actions().length > 0" class="px-6 py-3.5 text-right w-[60px]"></th>
         </tr>
       </thead>
       <tbody>
         <tr
           *ngFor="let row of filteredData()"
           (click)="onRowClick(row)"
-          class="table-row"
+          class="border-b border-brand-purple/10 last:border-b-0 hover:bg-brand-purple/[0.03] transition-colors cursor-pointer"
         >
           <td
             *ngFor="let col of columns()"
             [style.text-align]="col.align || 'left'"
+            class="px-6 py-4 text-sm text-app-text align-middle"
           >
             <!-- Caso Avatar -->
-            <div *ngIf="col.type === 'avatar'" class="cell-avatar-group">
-              <div class="cell-avatar-circle">
+            <div *ngIf="col.type === 'avatar'" class="flex items-center gap-3.5">
+              <div class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full bg-gradient-to-br from-brand-purple to-brand-purple-dark text-white flex items-center justify-center font-body text-xs font-bold tracking-wider shadow-sm select-none">
                 {{ getAvatarInitials(row, col) }}
               </div>
-              <span class="cell-avatar-label">{{ getCellValue(row, col) }}</span>
+              <span class="font-semibold text-app-text whitespace-nowrap">{{ getCellValue(row, col) }}</span>
             </div>
 
             <!-- Caso Badge -->
             <span
               *ngIf="col.type === 'badge'"
-              class="table-badge"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide border"
               [ngClass]="getBadgeClass(row, col)"
             >
               {{ getCellValue(row, col) }}
             </span>
 
             <!-- Caso Texto normal / Fecha -->
-            <span *ngIf="col.type !== 'avatar' && col.type !== 'badge'" class="cell-text">
+            <span *ngIf="col.type !== 'avatar' && col.type !== 'badge'" class="font-medium text-app-text">
               {{ getCellValue(row, col) }}
             </span>
           </td>
 
           <!-- Acciones -->
-          <td *ngIf="actions().length > 0" class="actions-cell" style="text-align: right;">
-            <div class="actions-group">
+          <td *ngIf="actions().length > 0" class="px-6 py-4 text-right align-middle">
+            <div class="flex items-center justify-end gap-2">
               <button
                 *ngFor="let act of actions()"
-                class="btn-table-action"
-                [class.btn-table-action--icon-only]="!act.label || !!act.icon"
-                [class.btn-table-action--danger]="act.variant === 'danger'"
-                [class.btn-table-action--primary]="act.variant === 'primary'"
+                class="w-8 h-8 rounded-lg border border-brand-purple/20 bg-white text-app-muted hover:bg-brand-purple/10 hover:border-brand-purple hover:text-brand-purple-dark hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                [class.w-auto]="act.label && !act.icon"
+                [class.px-3]="act.label && !act.icon"
+                [class.border-red-300]="act.variant === 'danger'"
+                [class.bg-red-50]="act.variant === 'danger'"
+                [class.text-red-600]="act.variant === 'danger'"
                 (click)="onActionClick(act.id, row, $event)"
                 [title]="act.label || 'Editar'"
               >
@@ -118,16 +128,18 @@
       </tbody>
     </table>
 
-    <!-- ESTADO VACÍO -->
-    <div class="table-empty" *ngIf="filteredData().length === 0">
-      <div class="empty-icon-box">
+    <!-- ═══════════════════════════════════════════════════
+         ESTADO VACÍO
+    ═══════════════════════════════════════════════════ -->
+    <div class="flex flex-col items-center justify-center py-14 px-4 gap-2 text-app-muted" *ngIf="filteredData().length === 0">
+      <div class="text-brand-purple/35 mb-1">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="8" y1="12" x2="16" y2="12"></line>
         </svg>
       </div>
-      <p class="empty-title">{{ emptyMessage() }}</p>
-      <p class="empty-hint" *ngIf="searchTerm()">
+      <p class="text-base font-semibold text-app-text m-0">{{ emptyMessage() }}</p>
+      <p class="text-xs text-app-muted m-0" *ngIf="searchTerm()">
         Intenta con otro término de búsqueda.
       </p>
     </div>

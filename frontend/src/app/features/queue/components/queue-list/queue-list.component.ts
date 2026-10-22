@@ -8,8 +8,7 @@ import { SessionService } from '../../../../core/services/session.service';
   selector: 'app-queue-list',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './queue-list.component.html',
-  styleUrl: './queue-list.component.scss'
+  templateUrl: './queue-list.component.html'
 })
 export class QueueListComponent implements OnInit, OnDestroy {
   private queueService = inject(QueueService);

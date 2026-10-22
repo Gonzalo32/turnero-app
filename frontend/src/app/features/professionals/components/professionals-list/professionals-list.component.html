@@ -1,79 +1,83 @@
-<!-- ══════════════════════════════════════════════════════════════════════════════
-     HEADER DE LA SECCIÓN ODONTÓLOGOS
-══════════════════════════════════════════════════════════════════════════════ -->
-<div class="section-header">
-  <div class="section-title-group">
-    <h2 class="section-title">Odontólogos</h2>
-    <p class="section-sub">Equipo profesional y cuerpo odontológico de Senza</p>
+<div class="flex flex-col flex-1 p-6 sm:p-10 overflow-y-auto">
+
+  <!-- ══════════════════════════════════════════════════════════════════════════════
+       HEADER DE LA SECCIÓN ODONTÓLOGOS
+  ══════════════════════════════════════════════════════════════════════════════ -->
+  <div class="flex items-start justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-brand text-2xl font-bold text-app-text mb-0.5 tracking-tight">Odontólogos</h2>
+      <p class="text-sm text-app-muted font-medium">Equipo profesional y cuerpo odontológico de Senza</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button
+        class="flex items-center justify-center w-10 h-10 rounded-xl bg-app-card border border-brand-purple/20 text-app-muted hover:bg-brand-purple/10 hover:text-brand-purple hover:border-brand-purple hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer shadow-sm"
+        (click)="loadData()"
+        [disabled]="loading()"
+        title="Actualizar lista"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.animate-spin]="loading()">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>
+      </button>
+
+      <button
+        class="inline-flex items-center gap-2.5 py-2.5 px-5 bg-gradient-to-r from-brand-purple to-brand-purple-dark hover:from-brand-purple-light hover:to-brand-purple text-white font-bold text-sm rounded-xl shadow-md shadow-brand-purple/25 hover:shadow-lg hover:shadow-brand-purple/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
+        (click)="onCreateProfessional()"
+        id="btn-create-professional"
+      >
+        <svg class="shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        <span>Nuevo Odontólogo</span>
+      </button>
+    </div>
   </div>
 
-  <div class="header-actions">
-    <button
-      class="btn-refresh"
-      (click)="loadData()"
-      [disabled]="loading()"
-      title="Actualizar lista"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.spinning]="loading()">
-        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+  <!-- MENSAJE DE ÉXITO -->
+  <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 mb-6 text-emerald-800 text-sm shadow-sm" *ngIf="successMessage()">
+    <div class="text-emerald-600 shrink-0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
-    </button>
-
-    <button
-      class="btn-primary-add"
-      (click)="onCreateProfessional()"
-      id="btn-create-professional"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <line x1="19" y1="8" x2="19" y2="14"/>
-        <line x1="22" y1="11" x2="16" y2="11"/>
-      </svg>
-      <span>Nuevo Odontólogo</span>
-    </button>
+    </div>
+    <span class="flex-1 font-semibold">{{ successMessage() }}</span>
+    <button class="text-emerald-600 text-lg leading-none hover:text-emerald-900 cursor-pointer p-1 font-bold" (click)="successMessage.set(null)">×</button>
   </div>
-</div>
 
-<!-- MENSAJE DE ÉXITO -->
-<div class="success-banner" *ngIf="successMessage()">
-  <div class="success-icon">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
+  <!-- ERROR DE CARGA -->
+  <div class="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-xl p-3.5 mb-6 text-red-800 text-sm shadow-sm" *ngIf="error()">
+    <span class="font-medium">{{ error() }}</span>
+    <button class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-bold transition-colors cursor-pointer" (click)="loadData()">Reintentar</button>
   </div>
-  <span class="success-text">{{ successMessage() }}</span>
-  <button class="banner-close" (click)="successMessage.set(null)">×</button>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════════
+       TABLA REUTILIZABLE (DATA TABLE COMPONENT)
+  ══════════════════════════════════════════════════════════════════════════════ -->
+  <app-data-table
+    [columns]="columns"
+    [data]="professionals()"
+    [actions]="actions"
+    [loading]="loading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar por nombre, apellido, especialidad o matrícula..."
+    countLabel="odontólogos"
+    emptyMessage="No se encontraron odontólogos registrados"
+    (actionClick)="onAction($event)"
+    (rowClick)="onRowSelected($event)"
+  />
+
+  <!-- ══════════════════════════════════════════════════════════════════════════════
+       MODAL DE CREACIÓN / EDICIÓN DE ODONTÓLOGO
+  ══════════════════════════════════════════════════════════════════════════════ -->
+  <app-professional-form-modal
+    *ngIf="isModalOpen()"
+    [professional]="editingProfessional()"
+    (closed)="onModalClose()"
+    (saved)="onProfessionalSaved($event)"
+  />
+
 </div>
-
-<!-- ERROR DE CARGA -->
-<div class="error-banner" *ngIf="error()">
-  <span>{{ error() }}</span>
-  <button class="btn-retry" (click)="loadData()">Reintentar</button>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════════
-     TABLA REUTILIZABLE (DATA TABLE COMPONENT)
-══════════════════════════════════════════════════════════════════════════════ -->
-<app-data-table
-  [columns]="columns"
-  [data]="professionals()"
-  [actions]="actions"
-  [loading]="loading()"
-  [searchable]="true"
-  searchPlaceholder="Buscar por nombre, apellido, especialidad o matrícula..."
-  countLabel="odontólogos"
-  emptyMessage="No se encontraron odontólogos registrados"
-  (actionClick)="onAction($event)"
-  (rowClick)="onRowSelected($event)"
-/>
-
-<!-- ══════════════════════════════════════════════════════════════════════════════
-     MODAL DE CREACIÓN / EDICIÓN DE ODONTÓLOGO
-══════════════════════════════════════════════════════════════════════════════ -->
-<app-professional-form-modal
-  *ngIf="isModalOpen()"
-  [professional]="editingProfessional()"
-  (closed)="onModalClose()"
-  (saved)="onProfessionalSaved($event)"
-/>

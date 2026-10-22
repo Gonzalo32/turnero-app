@@ -1,33 +1,33 @@
-<div class="login-bg">
-  <div class="login-card">
+<div class="min-h-screen flex items-center justify-center p-6 bg-app-main relative overflow-hidden bg-[radial-gradient(circle_at_15%_50%,rgba(134,99,133,0.12),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(203,203,204,0.4),transparent_30%)]">
+  <div class="bg-app-card border border-brand-purple/20 rounded-3xl p-8 sm:p-10 w-full max-w-[420px] shadow-2xl shadow-brand-purple/10 flex flex-col transition-all duration-300">
 
     <!-- Logo / ícono -->
-    <div class="login-logo">
-      <span style="font-family: var(--font-brand); font-size: 4rem; line-height: 1; font-weight: 400; font-style: italic; color: var(--color-brand-purple); padding-right: 2px; text-shadow: 0 8px 24px rgba(134, 99, 133, 0.25);">S</span>
+    <div class="self-center mb-4 transition-transform hover:scale-105 duration-300">
+      <span class="font-brand text-6xl leading-none italic text-brand-purple pr-1 drop-shadow-md">S</span>
     </div>
 
-    <h1 class="login-title">Sistema Odontológico</h1>
-    <p class="login-subtitle">Seleccioná tu nombre y consultorio para ingresar</p>
+    <h1 class="font-brand text-2xl sm:text-3xl font-bold text-center mb-1.5 bg-gradient-to-br from-app-text to-brand-purple bg-clip-text text-transparent">Sistema Odontológico</h1>
+    <p class="text-sm text-app-muted text-center mb-8 font-normal">Seleccioná tu nombre y consultorio para ingresar</p>
 
     <!-- Error de conexión -->
-    <div class="error-banner" *ngIf="errorMsg()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 text-red-600 p-3.5 rounded-xl text-sm font-medium mb-6" *ngIf="errorMsg()">
+      <svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      {{ errorMsg() }}
+      <span>{{ errorMsg() }}</span>
     </div>
 
-    <form class="login-form" (submit)="$event.preventDefault(); login()">
+    <form class="flex flex-col gap-5" (submit)="$event.preventDefault(); login()">
 
       <!-- Profesional -->
-      <div class="field">
-        <label class="field-label" for="select-prof">Odontólogo / Profesional</label>
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-bold text-brand-purple uppercase tracking-wider" for="select-prof">Odontólogo / Profesional</label>
 
-        <div class="select-wrapper" [class.loading]="loadingProfessionals()">
+        <div class="relative" [class.opacity-60]="loadingProfessionals()" [class.pointer-events-none]="loadingProfessionals()">
           <select
             id="select-prof"
-            class="field-select"
+            class="w-full appearance-none bg-app-main border border-brand-purple/25 rounded-xl text-app-text font-semibold text-sm sm:text-base py-3 pl-4 pr-10 cursor-pointer transition-all outline-none hover:bg-[#f0edf0] focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/15 focus:bg-app-card disabled:opacity-50 disabled:cursor-not-allowed"
             [ngModel]="selectedProfId()"
             (ngModelChange)="selectedProfId.set($event)"
             name="profesional"
@@ -44,7 +44,7 @@
               {{ professionalFullName(prof) }}
             </option>
           </select>
-          <div class="select-arrow">
+          <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-purple pointer-events-none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
@@ -53,12 +53,12 @@
       </div>
 
       <!-- Consultorio -->
-      <div class="field">
-        <label class="field-label" for="select-office">Consultorio</label>
-        <div class="select-wrapper">
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-bold text-brand-purple uppercase tracking-wider" for="select-office">Consultorio</label>
+        <div class="relative">
           <select
             id="select-office"
-            class="field-select"
+            class="w-full appearance-none bg-app-main border border-brand-purple/25 rounded-xl text-app-text font-semibold text-sm sm:text-base py-3 pl-4 pr-10 cursor-pointer transition-all outline-none hover:bg-[#f0edf0] focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/15 focus:bg-app-card disabled:opacity-50 disabled:cursor-not-allowed"
             [ngModel]="selectedOffice()"
             (ngModelChange)="selectedOffice.set($event)"
             name="consultorio"
@@ -67,7 +67,7 @@
             <option value="" disabled>— Seleccioná un consultorio —</option>
             <option *ngFor="let o of offices" [value]="o">{{ o }}</option>
           </select>
-          <div class="select-arrow">
+          <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-purple pointer-events-none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
@@ -78,7 +78,7 @@
       <!-- Botón login -->
       <button
         type="submit"
-        class="btn-login"
+        class="flex items-center justify-center gap-2.5 mt-2 py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-purple-light hover:from-brand-purple-dark hover:to-brand-purple text-white font-bold rounded-xl shadow-lg shadow-brand-purple/25 hover:shadow-brand-purple/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-35 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all duration-200 cursor-pointer"
         id="btn-login"
         [disabled]="!canLogin()"
       >
@@ -87,7 +87,7 @@
           <polyline points="10 17 15 12 10 7"/>
           <line x1="15" y1="12" x2="3" y2="12"/>
         </svg>
-        Ingresar
+        <span>Ingresar</span>
       </button>
 
     </form>
