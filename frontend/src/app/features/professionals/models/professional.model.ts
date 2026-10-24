@@ -36,19 +36,6 @@ export interface CreateProfessionalDto {
   notes?: string;
 }
 
-/** Especialidades odontológicas sugeridas */
-export const DENTAL_SPECIALTIES = [
-  'Odontología General',
-  'Ortodoncia',
-  'Endodoncia',
-  'Implantología',
-  'Periodoncia',
-  'Prótesis Dental',
-  'Odontopediatría',
-  'Cirugía Maxilofacial',
-  'Estética Dental',
-] as const;
-
 /** Retorna el nombre completo formateado del profesional */
 export function getProfessionalFullName(p: Professional): string {
   return `${p.lastName}, ${p.firstName}`;

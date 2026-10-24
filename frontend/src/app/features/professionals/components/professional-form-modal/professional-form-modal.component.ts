@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, input, output } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfessionalsService } from '../../services/professionals.service';
-import { Professional, DENTAL_SPECIALTIES, CreateProfessionalDto } from '../../models/professional.model';
+import { Professional, CreateProfessionalDto } from '../../models/professional.model';
 
 @Component({
   selector: 'app-professional-form-modal',
@@ -24,19 +24,6 @@ export class ProfessionalFormModalComponent implements OnInit {
   /** Evento al guardar exitosamente */
   readonly saved = output<Professional>();
 
-  readonly specialties = DENTAL_SPECIALTIES;
-
-  /** Colores predefinidos de Senza para identificar profesionales en turnero / agenda */
-  readonly presetColors = [
-    { label: 'Senza Mauve', value: '#866385' },
-    { label: 'Púrpura Profundo', value: '#6a3260' },
-    { label: 'Verde Esmeralda', value: '#059669' },
-    { label: 'Azul Índigo', value: '#4f46e5' },
-    { label: 'Turquesa Mar', value: '#0891b2' },
-    { label: 'Ámbar Cálido', value: '#d97706' },
-    { label: 'Rosa Magenta', value: '#db2777' },
-  ];
-
   readonly saving = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal<boolean>(false);
@@ -50,26 +37,18 @@ export class ProfessionalFormModalComponent implements OnInit {
     this.form = this.fb.group({
       firstName: [prof?.firstName || '', [Validators.required, Validators.minLength(2)]],
       lastName: [prof?.lastName || '', [Validators.required, Validators.minLength(2)]],
+      licenseNumber: [prof?.licenseNumber || '', [Validators.required]],
+      email: [prof?.email || '', [Validators.required, Validators.email]],
+      password: ['', isEdit ? [Validators.minLength(6)] : [Validators.required, Validators.minLength(6)]],
       dni: [prof?.dni || '', [Validators.pattern(/^[0-9]{7,9}$/)]],
-      licenseNumber: [prof?.licenseNumber || ''],
       birthDate: [prof?.birthDate ? prof.birthDate.substring(0, 10) : ''],
-      email: [prof?.email || '', [Validators.email]],
       phone: [prof?.phone || ''],
-      address: [prof?.address || ''],
-      specialty: [prof?.specialty || 'Odontología General', [Validators.required]],
-      colorTag: [prof?.colorTag || '#866385'],
-      notes: [prof?.notes || ''],
-      password: ['', isEdit ? [] : [Validators.minLength(6)]],
-      confirmPassword: ['']
+      address: [prof?.address || '']
     });
   }
 
   isEditMode(): boolean {
     return !!this.professional();
-  }
-
-  selectColor(color: string): void {
-    this.form.patchValue({ colorTag: color });
   }
 
   togglePasswordVisibility(): void {
@@ -84,12 +63,6 @@ export class ProfessionalFormModalComponent implements OnInit {
 
     const val = this.form.value;
 
-    // Validación de coincidencia de contraseña si se ingresó
-    if (val.password && val.password !== val.confirmPassword) {
-      this.errorMessage.set('Las contraseñas ingresadas no coinciden');
-      return;
-    }
-
     this.saving.set(true);
     this.errorMessage.set(null);
 
@@ -103,9 +76,6 @@ export class ProfessionalFormModalComponent implements OnInit {
       password: val.password || undefined,
       phone: val.phone?.trim() || undefined,
       address: val.address?.trim() || undefined,
-      specialty: val.specialty,
-      colorTag: val.colorTag,
-      notes: val.notes?.trim() || undefined,
     };
 
     try {

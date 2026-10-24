@@ -109,43 +109,18 @@
           Datos Profesionales
         </h4>
 
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">Matrícula / N° Profesional</label>
-            <input
-              type="text"
-              class="field-input"
-              formControlName="licenseNumber"
-              placeholder="Ej: MN 45892 o MP 1234"
-            />
-          </div>
-
-          <div class="form-field">
-            <label class="field-label">Especialidad <span class="required">*</span></label>
-            <select class="field-select" formControlName="specialty">
-              <option *ngFor="let s of specialties" [value]="s">{{ s }}</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Color de identificación para la agenda/turnero -->
         <div class="form-field">
-          <label class="field-label">Color de Identificación (Agenda y Turnero)</label>
-          <div class="color-palette">
-            <button
-              type="button"
-              *ngFor="let c of presetColors"
-              class="color-chip"
-              [style.background-color]="c.value"
-              [class.color-chip--active]="form.get('colorTag')?.value === c.value"
-              (click)="selectColor(c.value)"
-              [title]="c.label"
-            >
-              <svg *ngIf="form.get('colorTag')?.value === c.value" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </button>
-          </div>
+          <label class="field-label">Matrícula / N° Profesional <span class="required">*</span></label>
+          <input
+            type="text"
+            class="field-input"
+            formControlName="licenseNumber"
+            placeholder="Ej: MN 45892 o MP 1234"
+            [class.field-input--error]="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched"
+          />
+          <span class="field-error" *ngIf="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched">
+            La matrícula es obligatoria.
+          </span>
         </div>
       </div>
 
@@ -181,7 +156,7 @@
         </div>
 
         <div class="form-field">
-          <label class="field-label">Correo Electrónico</label>
+          <label class="field-label">Correo Electrónico <span class="required">*</span></label>
           <input
             type="email"
             class="field-input"
@@ -189,7 +164,10 @@
             placeholder="Ej: odontologo@senza.com"
             [class.field-input--error]="form.get('email')?.invalid && form.get('email')?.touched"
           />
-          <span class="field-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          <span class="field-error" *ngIf="form.get('email')?.hasError('required') && form.get('email')?.touched">
+            El correo electrónico es obligatorio.
+          </span>
+          <span class="field-error" *ngIf="form.get('email')?.hasError('email') && form.get('email')?.touched">
             Ingrese un correo electrónico válido.
           </span>
         </div>
@@ -206,74 +184,43 @@
           <span class="optional-badge" *ngIf="isEditMode()">(Dejar en blanco para mantener actual)</span>
         </h4>
 
-        <div class="form-grid form-grid--2">
-          <div class="form-field">
-            <label class="field-label">
-              Contraseña
-              <span class="required" *ngIf="!isEditMode()">*</span>
-            </label>
-            <div class="password-wrapper">
-              <input
-                [type]="showPassword() ? 'text' : 'password'"
-                class="field-input"
-                formControlName="password"
-                placeholder="Mínimo 6 caracteres"
-                [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched"
-              />
-              <button
-                type="button"
-                class="btn-toggle-eye"
-                (click)="togglePasswordVisibility()"
-                title="Mostrar / ocultar"
-              >
-                <!-- Ojo visible -->
-                <svg *ngIf="!showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <!-- Ojo tachado -->
-                <svg *ngIf="showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            <span class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-              La contraseña debe tener al menos 6 caracteres.
-            </span>
-          </div>
-
-          <div class="form-field">
-            <label class="field-label">Confirmar Contraseña</label>
+        <div class="form-field">
+          <label class="field-label">
+            Contraseña
+            <span class="required" *ngIf="!isEditMode()">*</span>
+          </label>
+          <div class="password-wrapper">
             <input
               [type]="showPassword() ? 'text' : 'password'"
               class="field-input"
-              formControlName="confirmPassword"
-              placeholder="Repite la contraseña"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched"
             />
+            <button
+              type="button"
+              class="btn-toggle-eye"
+              (click)="togglePasswordVisibility()"
+              title="Mostrar / ocultar"
+            >
+              <!-- Ojo visible -->
+              <svg *ngIf="!showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <!-- Ojo tachado -->
+              <svg *ngIf="showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
           </div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN 5: OBSERVACIONES -->
-      <div class="form-section">
-        <h4 class="section-heading">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-          Observaciones Internas
-        </h4>
-
-        <div class="form-field">
-          <textarea
-            class="field-textarea"
-            formControlName="notes"
-            rows="3"
-            placeholder="Horarios preferentes, disponibilidad, notas clínicas..."
-          ></textarea>
+          <span class="field-error" *ngIf="form.get('password')?.hasError('required') && form.get('password')?.touched">
+            La contraseña es obligatoria.
+          </span>
+          <span class="field-error" *ngIf="form.get('password')?.hasError('minlength') && form.get('password')?.touched">
+            La contraseña debe tener al menos 6 caracteres.
+          </span>
         </div>
       </div>
 

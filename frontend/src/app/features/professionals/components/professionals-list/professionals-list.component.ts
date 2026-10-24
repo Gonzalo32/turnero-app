@@ -42,21 +42,14 @@ export class ProfessionalsListComponent implements OnInit {
       key: 'lastName',
       header: 'Odontólogo',
       type: 'avatar',
-      width: '35%',
+      width: '45%',
       format: (_, row) => `${row.lastName}, ${row.firstName}`
-    },
-    {
-      key: 'specialty',
-      header: 'Especialidad',
-      type: 'text',
-      width: '25%',
-      format: (val) => val || 'Odontología General'
     },
     {
       key: 'licenseNumber',
       header: 'Matrícula',
       type: 'text',
-      width: '20%',
+      width: '35%',
       format: (val) => {
         if (!val) return 'Sin matrícula';
         const str = String(val).trim();
