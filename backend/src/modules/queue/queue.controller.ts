@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { queueService } from './queue.service';
 import { QueueSource, CreateQueueEntryDto } from './queue.types';
-import { IQueueEntry } from './queue.model';
+import { IAtencion } from '../atenciones/atencion.model';
 import { toPublicEntry } from './queue.socket';
 
 /**
@@ -13,7 +13,7 @@ import { toPublicEntry } from './queue.socket';
  */
 
 /** Adapta una transición de estado (:id → entrada actualizada) a un handler Express */
-function transition(action: (id: string) => Promise<IQueueEntry>, message: string) {
+function transition(action: (id: string) => Promise<IAtencion>, message: string) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const entry = await action(req.params['id']);

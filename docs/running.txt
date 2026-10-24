@@ -72,8 +72,6 @@ TERMINAL 2 — Frontend (App)
     npm run start:prod  → Inicia el servidor desde dist/ compilado (producción)
     npm run build       → Compila el backend TypeScript a dist/
     npm run seed        → Carga los 14 profesionales en MongoDB (1 sola vez)
-    npm run migrate:queue → Simula la migración de la cola a queueentries
-                            (agregar -- --apply para escribir; hacer backup antes)
 
   Desde frontend/:
     npm run start   → Inicia el frontend Angular en dev (puerto 4300)

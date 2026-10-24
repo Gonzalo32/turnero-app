@@ -39,6 +39,12 @@ export class TotemIntegrationService {
       professionalId: professional._id.toString(),
       source: QueueSource.TOTEM,
       sourceRecordId: record._id,
+      telefono: record.telefono,
+      fechaNacimiento: record.fechaNacimiento,
+      numeroAfiliado: record.numeroAfiliado,
+      localidad: record.localidad,
+      domicilio: record.domicilio,
+      observacion: record.observacion,
     });
   }
 }

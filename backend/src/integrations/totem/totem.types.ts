@@ -1,8 +1,10 @@
+import type { PacienteDetalle } from '../../modules/patients/patient.model';
+
 /**
  * Registro que el tótem (odonto-app) envía al terminar el formulario.
- * Solo los datos necesarios para la cola (AGENTS.md §12).
+ * Los datos filiatorios opcionales se guardan en 'pacientes'.
  */
-export interface TotemPatientRecord {
+export interface TotemPatientRecord extends PacienteDetalle {
   /** _id del paciente en la base del tótem (estable por DNI) */
   _id: string;
   dni: string;
