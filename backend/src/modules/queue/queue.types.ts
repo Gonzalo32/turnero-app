@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import type { PacienteDetalle } from '../patients/patient.model';
 
 /**
  * Estados posibles de una entrada en la cola de espera.
@@ -24,7 +25,7 @@ export enum QueueSource {
 }
 
 /** DTO para crear una nueva entrada en la cola */
-export interface CreateQueueEntryDto {
+export interface CreateQueueEntryDto extends PacienteDetalle {
   patientFirstName: string;
   patientLastName: string;
   patientDni: string;

@@ -1,5 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
-import { IQueueEntry } from './queue.model';
+import { Types } from 'mongoose';
+import { IAtencion } from '../atenciones/atencion.model';
+import { IPaciente } from '../patients/patient.model';
 import { QUEUE_EVENTS, QueueEntryPublic } from './queue.types';
 import { logger } from '../../utils/logger';
 
@@ -35,29 +37,33 @@ export function initQueueSocket(socketServer: SocketIOServer): void {
   });
 }
 
-/** Datos mínimos de una entrada para la pantalla del profesional (AGENTS.md §58) */
-export function toPublicEntry(e: IQueueEntry): QueueEntryPublic {
+/**
+ * Datos mínimos de una atención para la pantalla del profesional (AGENTS.md §58).
+ * Espera la atención con patientId populado (dni, nombre, apellido).
+ */
+export function toPublicEntry(a: IAtencion): QueueEntryPublic {
+  const p = a.patientId instanceof Types.ObjectId ? undefined : (a.patientId as IPaciente);
   return {
-    _id: e._id.toString(),
-    patientId: e.patientId,
-    patientFirstName: e.patientFirstName,
-    patientLastName: e.patientLastName,
-    patientDni: e.patientDni,
-    healthInsurance: e.healthInsurance,
-    professionalId: e.professionalId,
-    office: e.office,
-    status: e.status,
-    visitNumber: e.visitNumber,
-    joinedAt: e.joinedAt,
-    calledAt: e.calledAt,
-    attentionStartedAt: e.attentionStartedAt,
-    completedAt: e.completedAt,
-    cancelledAt: e.cancelledAt,
+    _id: a._id.toString(),
+    patientId: p?._id ?? (a.patientId as Types.ObjectId),
+    patientFirstName: p?.nombre ?? '',
+    patientLastName: p?.apellido ?? '',
+    patientDni: p?.dni ?? '',
+    healthInsurance: a.obraSocial,
+    professionalId: a.professionalId,
+    office: a.consultorio,
+    status: a.estado,
+    visitNumber: a.numeroVisita,
+    joinedAt: a.fecha,
+    calledAt: a.llamadoAt,
+    attentionStartedAt: a.inicioAtencionAt,
+    completedAt: a.finalizadoAt,
+    cancelledAt: a.canceladoAt,
   };
 }
 
 /** Emite el evento a la sala del profesional dueño de la entrada y a la sala general del turnero de TV */
-function emitToProfessional(event: string, entry: IQueueEntry): void {
+function emitToProfessional(event: string, entry: IAtencion): void {
   if (!io) return;
   const publicEntry = toPublicEntry(entry);
   const room = `professional:${entry.professionalId.toString()}`;
@@ -66,8 +72,8 @@ function emitToProfessional(event: string, entry: IQueueEntry): void {
   logger.debug(`[Socket] ${event} emitido a ${room} y queue:tv`);
 }
 
-export const emitPatientAdded = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_ADDED, e);
-export const emitPatientCalled = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_CALLED, e);
-export const emitPatientStarted = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_STARTED, e);
-export const emitPatientCompleted = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_COMPLETED, e);
-export const emitPatientCancelled = (e: IQueueEntry) => emitToProfessional(QUEUE_EVENTS.PATIENT_CANCELLED, e);
+export const emitPatientAdded = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_ADDED, e);
+export const emitPatientCalled = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_CALLED, e);
+export const emitPatientStarted = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_STARTED, e);
+export const emitPatientCompleted = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_COMPLETED, e);
+export const emitPatientCancelled = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_CANCELLED, e);
