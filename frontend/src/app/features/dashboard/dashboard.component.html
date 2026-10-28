@@ -1,15 +1,52 @@
 <div class="dashboard-shell">
 
-  <!-- ══════════════════ SIDEBAR ══════════════════ -->
-  <aside class="sidebar" [class.sidebar--collapsed]="isCollapsed()">
+  <!-- ══════════════════ ZONA DE BORDE Y BOTÓN DE RESTAURACIÓN ══════════════════ -->
+  <!-- Detecta el cursor en el borde izquierdo cuando la barra lateral está oculta -->
+  <div
+    *ngIf="isSidebarHidden()"
+    class="sidebar-edge-zone"
+    (mouseenter)="onEdgeHover()"
+    (mouseleave)="onEdgeLeave()"
+    aria-hidden="true"
+  ></div>
 
-    <!-- Botón circular para contraer / expandir -->
+  <!-- Botón flotante temporal para volver a mostrar el menú lateral -->
+  <button
+    *ngIf="isSidebarHidden()"
+    type="button"
+    class="btn-restore-sidebar"
+    [class.btn-restore-sidebar--visible]="showRestoreBtn()"
+    (mouseenter)="onRestoreBtnEnter()"
+    (mouseleave)="onRestoreBtnLeave()"
+    (click)="restoreSidebar()"
+    aria-label="Mostrar menú lateral"
+    title="Mostrar menú lateral"
+    id="btn-restore-sidebar"
+  >
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </button>
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <aside class="sidebar" [class.sidebar--hidden]="isSidebarHidden()">
+
+    <!-- Botón circular para ocultar completamente la barra -->
     <button
       type="button"
       class="btn-toggle-sidebar"
       (click)="toggleSidebar()"
-      [attr.aria-label]="isCollapsed() ? 'Expandir menú lateral' : 'Contraer menú lateral'"
-      [title]="isCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+      aria-label="Ocultar menú lateral"
+      title="Ocultar menú lateral"
       id="btn-toggle-sidebar"
     >
       <svg
@@ -28,7 +65,7 @@
     </button>
 
     <!-- Logo -->
-    <div class="sidebar-brand" [title]="isCollapsed() ? 'Senza Consultorios' : ''">
+    <div class="sidebar-brand" title="Senza Consultorios">
       <div class="brand-icon">
         <span style="font-family: var(--font-brand); font-size: 2.5rem; line-height: 1; font-weight: 400; font-style: italic; color: var(--color-brand-purple); padding-right: 2px;">S</span>
       </div>
