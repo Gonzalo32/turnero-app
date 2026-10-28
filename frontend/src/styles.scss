@@ -1,5 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Badges dinámicos usados en DataTable y listas */
+  .badge-active {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+  .badge-inactive {
+    @apply bg-red-50 text-red-600 border-red-200;
+  }
+  .badge-purple {
+    @apply bg-brand-purple/10 text-brand-purple-dark border-brand-purple/20;
+  }
+}
+
 :root {
   /* Paleta de colores CLAROS (basado en la última imagen) */
   --color-brand-purple: #866385;      /* Púrpura apagado / Mauve */

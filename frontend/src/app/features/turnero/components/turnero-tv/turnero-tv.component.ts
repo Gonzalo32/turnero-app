@@ -54,13 +54,20 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
     const profs = this.professionalsMap();
     const now = new Date();
 
+    const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const todayIsoDate = now.toISOString().slice(0, 10);
 
     const isPatientForToday = (dStr: string) => {
       if (!dStr) return false;
       try {
-        const entryIsoDate = new Date(dStr).toISOString().slice(0, 10);
-        return entryIsoDate === todayIsoDate;
+        const d = new Date(dStr);
+        // Si el paciente llegó en las últimas 24 horas, siempre se considera de la jornada actual
+        const diffHours = (now.getTime() - d.getTime()) / (1000 * 60 * 60);
+        if (diffHours >= 0 && diffHours < 24) return true;
+
+        const entryLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const entryIsoDate = d.toISOString().slice(0, 10);
+        return entryLocal === todayLocal || entryIsoDate === todayIsoDate;
       } catch {
         return false;
       }
