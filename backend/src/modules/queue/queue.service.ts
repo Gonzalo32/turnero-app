@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Paciente } from '../patients/patient.model';
 import { Professional } from '../professionals/professional.model';
 import { Atencion, IAtencion } from '../atenciones/atencion.model';
@@ -26,8 +26,56 @@ export interface AddToQueueResult {
 
 export class QueueService {
 
+  /** Sincroniza entradas que el tótem haya insertado directamente en 'queueentries' */
+  async syncLegacyQueueEntries(): Promise<void> {
+    try {
+      const db = mongoose.connection.db;
+      if (!db) return;
+      const legacyEntries = await db.collection('queueentries').find({
+        status: { $in: ACTIVE_QUEUE_STATUSES },
+      }).toArray();
+
+      for (const qe of legacyEntries) {
+        const idOrigen = qe['sourceRecordId'] || qe['_id'].toString();
+        const existing = await Atencion.findOne({ idOrigen });
+        if (!existing) {
+          const dni = qe['patientDni']?.trim() || 'SIN-DNI';
+          const nombre = qe['patientFirstName']?.trim() || '';
+          const apellido = qe['patientLastName']?.trim() || '';
+          const patient = await Paciente.findOneAndUpdate(
+            { dni },
+            {
+              $set: { nombre, apellido, obraSocial: qe['healthInsurance'] || 'Particular' },
+              $setOnInsert: { sourceSystem: 'totem', sourcePatientId: idOrigen },
+            },
+            { upsert: true, new: true }
+          );
+
+          const entry = await Atencion.create({
+            patientId: patient._id,
+            professionalId: new Types.ObjectId(qe['professionalId']),
+            fecha: qe['joinedAt'] ? new Date(qe['joinedAt']) : new Date(),
+            estado: qe['status'] || QueueStatus.WAITING,
+            consultorio: qe['office'] || '',
+            obraSocial: qe['healthInsurance'] || 'Particular',
+            numeroVisita: 1,
+            origen: QueueSource.TOTEM,
+            idOrigen,
+          });
+          await entry.populate('patientId', PATIENT_FIELDS);
+          emitPatientAdded(entry);
+          logger.info(`[QueueService] Sincronizado desde queueentries: ${nombre} ${apellido}`);
+        }
+      }
+    } catch (err) {
+      logger.warn('[QueueService] Error sincronizando queueentries legadas:', err);
+    }
+  }
+
   /** Cola activa ordenada por llegada; _id desempata (AGENTS.md §16) */
   async getActiveQueue(professionalId?: string): Promise<IAtencion[]> {
+    await this.syncLegacyQueueEntries();
+
     const filter: Record<string, unknown> = { estado: { $in: ACTIVE_QUEUE_STATUSES } };
 
     if (professionalId) {
