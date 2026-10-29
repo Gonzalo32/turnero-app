@@ -31,4 +31,14 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          script: cd ~/turnero && docker compose pull turnero && docker compose up -d
+          envs: GHCR_USER,GHCR_TOKEN
+          script: |
+            set -e
+            cd ~/turnero
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose pull turnero
+            docker logout ghcr.io
+            docker compose up -d
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
