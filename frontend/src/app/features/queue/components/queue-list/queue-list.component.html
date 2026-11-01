@@ -4,16 +4,9 @@
 <div class="section-header">
   <div class="section-title-group">
     <h2 class="section-title">Cola de Pacientes</h2>
-    <p class="section-sub">Actualizándose en tiempo real</p>
   </div>
 
   <div class="header-controls">
-    <!-- Indicador Socket.IO -->
-    <div class="ws-indicator" [class.ws-indicator--on]="socketConnected()">
-      <span class="ws-dot"></span>
-      <span class="ws-label">{{ socketConnected() ? 'En vivo' : 'Reconectando...' }}</span>
-    </div>
-
     <!-- Contador -->
     <div class="patient-count" [class.patient-count--empty]="totalWaiting() === 0">
       <span class="count-number">{{ totalWaiting() }}</span>

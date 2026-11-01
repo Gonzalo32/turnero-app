@@ -45,6 +45,9 @@ export class DataTableComponent<T = any> {
   /** Evento al hacer clic en una acción */
   readonly actionClick = output<{ action: string; row: T }>();
 
+  /** Campos específicos por los cuales filtrar la búsqueda (opcional) */
+  readonly searchKeys = input<string[]>();
+
   /** Texto del buscador */
   readonly searchTerm = signal<string>('');
 
@@ -55,8 +58,29 @@ export class DataTableComponent<T = any> {
 
     if (!query) return list;
 
+    const keys = this.searchKeys();
+
     return list.filter(item => {
-      return Object.values(item as Record<string, any>).some(val => {
+      const rec = item as Record<string, any>;
+
+      if (keys && keys.length > 0) {
+        // Búsqueda combinada de nombre y apellido si ambos existen
+        if (rec['firstName'] || rec['lastName']) {
+          const fn = String(rec['firstName'] || '').toLowerCase();
+          const ln = String(rec['lastName'] || '').toLowerCase();
+          if (`${fn} ${ln}`.includes(query) || `${ln} ${fn}`.includes(query) || `${ln}, ${fn}`.includes(query)) {
+            return true;
+          }
+        }
+
+        return keys.some(key => {
+          const val = rec[key];
+          if (val === null || val === undefined) return false;
+          return String(val).toLowerCase().includes(query);
+        });
+      }
+
+      return Object.values(rec).some(val => {
         if (val === null || val === undefined) return false;
         return String(val).toLowerCase().includes(query);
       });
