@@ -49,7 +49,7 @@
               type="text"
               class="field-input"
               formControlName="firstName"
-              placeholder="Ej: Martin"
+              placeholder="Ej: Juan"
               [class.field-input--error]="form.get('firstName')?.invalid && form.get('firstName')?.touched"
             />
             <span class="field-error" *ngIf="form.get('firstName')?.invalid && form.get('firstName')?.touched">
@@ -63,7 +63,7 @@
               type="text"
               class="field-input"
               formControlName="lastName"
-              placeholder="Ej: Chaparro"
+              placeholder="Ej: Pérez"
               [class.field-input--error]="form.get('lastName')?.invalid && form.get('lastName')?.touched"
             />
             <span class="field-error" *ngIf="form.get('lastName')?.invalid && form.get('lastName')?.touched">
@@ -79,7 +79,7 @@
               type="text"
               class="field-input"
               formControlName="dni"
-              placeholder="Ej: 34567890"
+              placeholder="Ej: 12345678"
               maxlength="9"
               [class.field-input--error]="form.get('dni')?.invalid && form.get('dni')?.touched"
             />
@@ -115,7 +115,7 @@
             type="text"
             class="field-input"
             formControlName="licenseNumber"
-            placeholder="Ej: MN 45892 o MP 1234"
+            placeholder="Ej: MN 1234 o MP 5678"
             [class.field-input--error]="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched"
           />
           <span class="field-error" *ngIf="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched">
@@ -140,7 +140,7 @@
               type="tel"
               class="field-input"
               formControlName="phone"
-              placeholder="Ej: +54 9 11 2345-6789"
+              placeholder="Ej: +54 9 11 0000-0000"
             />
           </div>
 
@@ -150,7 +150,7 @@
               type="text"
               class="field-input"
               formControlName="address"
-              placeholder="Ej: Av. Santa Fe 1234, CABA"
+              placeholder="Ej: Calle 123"
             />
           </div>
         </div>
@@ -161,7 +161,7 @@
             type="email"
             class="field-input"
             formControlName="email"
-            placeholder="Ej: odontologo@senza.com"
+            placeholder="Ej: profesional@ejemplo.com"
             [class.field-input--error]="form.get('email')?.invalid && form.get('email')?.touched"
           />
           <span class="field-error" *ngIf="form.get('email')?.hasError('required') && form.get('email')?.touched">
