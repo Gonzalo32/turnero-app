@@ -46,8 +46,7 @@ export interface Professional {
   lastName: string;
   licenseNumber?: string;
   office?: string;
-  specialty?: string;
-  colorTag?: string;
+  email?: string;
   active: boolean;
 }
 

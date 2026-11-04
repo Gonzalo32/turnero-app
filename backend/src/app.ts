@@ -8,6 +8,7 @@ import { errorMiddleware } from './middlewares/error.middleware';
 import { initQueueSocket } from './modules/queue/queue.socket';
 import queueRoutes from './modules/queue/queue.routes';
 import professionalRoutes from './modules/professionals/professional.routes';
+import authRoutes from './modules/auth/auth.routes';
 import totemRoutes from './integrations/totem/totem.routes';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -33,6 +34,7 @@ app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
 // ── Rutas API v1 ─────────────────────────────────────────────────────────────
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/queue', queueRoutes);
 app.use('/api/v1/professionals', professionalRoutes);
 

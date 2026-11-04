@@ -13,9 +13,6 @@ export interface CreateProfessionalDto {
   password?: string;
   phone?: string;
   address?: string;
-  specialty?: string;
-  colorTag?: string;
-  notes?: string;
   office?: string;
 }
 
@@ -86,9 +83,6 @@ export class ProfessionalService {
       password: data.password, // el pre-save hook lo encripta
       phone: data.phone?.trim(),
       address: data.address?.trim(),
-      specialty: data.specialty?.trim() || 'Odontología General',
-      colorTag: data.colorTag?.trim() || '#866385',
-      notes: data.notes?.trim(),
       office: data.office?.trim(),
       active: true,
     });
@@ -114,9 +108,6 @@ export class ProfessionalService {
     if (data.birthDate !== undefined) prof.birthDate = data.birthDate ? new Date(data.birthDate) : undefined;
     if (data.phone !== undefined) prof.phone = data.phone?.trim();
     if (data.address !== undefined) prof.address = data.address?.trim();
-    if (data.specialty !== undefined) prof.specialty = data.specialty?.trim();
-    if (data.colorTag !== undefined) prof.colorTag = data.colorTag?.trim();
-    if (data.notes !== undefined) prof.notes = data.notes?.trim();
     if (data.office !== undefined) prof.office = data.office?.trim();
     if (data.active !== undefined) prof.active = data.active;
 

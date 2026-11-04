@@ -104,7 +104,7 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
       .map(entry => {
         const prof = profs.get(entry.professionalId);
         const profName = prof ? `${prof.firstName} ${prof.lastName}` : 'Profesional asignado';
-        const profColor = prof?.colorTag || '#866385';
+        const profColor = '#866385';
         const office = entry.office || prof?.office || 'Consultorio --';
 
         const dateObj = new Date(entry.joinedAt);

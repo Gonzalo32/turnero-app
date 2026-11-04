@@ -12,9 +12,6 @@ export interface Professional {
   email?: string;
   phone?: string;
   address?: string;
-  specialty?: string;
-  colorTag?: string;
-  notes?: string;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -31,9 +28,6 @@ export interface CreateProfessionalDto {
   password?: string;
   phone?: string;
   address?: string;
-  specialty?: string;
-  colorTag?: string;
-  notes?: string;
 }
 
 /** Retorna el nombre completo formateado del profesional */

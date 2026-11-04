@@ -2,79 +2,80 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response.model';
-import { Professional, professionalFullName } from '../../queue/models/queue.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { SessionService } from '../../../core/services/session.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  templateUrl: './login.component.html'
 })
 export class LoginComponent implements OnInit {
-  private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private router = inject(Router);
   private session = inject(SessionService);
 
-  professionals = signal<Professional[]>([]);
-  loadingProfessionals = signal(true);
-  errorMsg = signal('');
-
-  selectedProfId = signal('');
+  email = signal('');
+  password = signal('');
   selectedOffice = signal('');
 
-  readonly offices = Array.from({ length: 9 }, (_, i) => `Consultorio ${i + 1}`);
+  showPassword = signal(false);
+  isSubmitting = signal(false);
+  errorMsg = signal('');
 
+  readonly offices = Array.from({ length: 12 }, (_, i) => `Consultorio ${i + 1}`);
+
+  /**
+   * Los 3 campos (correo, contraseña y consultorio) deben estar completos
+   * para habilitar el botón de ingreso.
+   */
   readonly canLogin = computed(() =>
-    this.selectedProfId() !== '' && this.selectedOffice() !== ''
+    this.email().trim().length > 0 &&
+    this.password().trim().length > 0 &&
+    this.selectedOffice().trim().length > 0 &&
+    !this.isSubmitting()
   );
 
-  readonly professionalFullName = professionalFullName;
-
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     if (this.session.isLoggedIn) {
-      this.router.navigate(['/dashboard/pacientes']);
-      return;
+      this.router.navigate(['/dashboard']);
     }
+  }
 
-    try {
-      const res = await firstValueFrom(
-        this.http.get<ApiResponse<Professional[]>>(`${environment.apiUrl}/professionals`)
-      );
-      if (res.success && res.data) {
-        this.professionals.set(res.data);
-      }
-    } catch {
-      this.errorMsg.set('No se pudo conectar con el servidor. Verificá que el backend esté corriendo.');
-    } finally {
-      this.loadingProfessionals.set(false);
-    }
+  togglePasswordVisibility(): void {
+    this.showPassword.update(v => !v);
   }
 
   async login(): Promise<void> {
     if (!this.canLogin()) return;
 
-    const prof = this.professionals().find(p => p._id === this.selectedProfId());
-    if (!prof) return;
+    this.errorMsg.set('');
+    this.isSubmitting.set(true);
 
-    const office = this.selectedOffice();
-    this.session.login(prof, office);
+    const email = this.email().trim();
+    const password = this.password().trim();
+    const office = this.selectedOffice().trim();
 
     try {
-      await firstValueFrom(
-        this.http.put(`${environment.apiUrl}/professionals/${prof._id}`, { office })
+      const res = await firstValueFrom(
+        this.authService.login({ email, password, office })
       );
-    } catch {
-      // Si falla la red, la sesión local se mantiene
+
+      if (res.success && res.data?.user) {
+        this.session.login(res.data.user, office);
+        this.router.navigate(['/dashboard']);
+      } else {
+        this.errorMsg.set(res.message || 'Error al iniciar sesión');
+      }
+    } catch (err: any) {
+      const serverMsg = err?.error?.message;
+      this.errorMsg.set(
+        serverMsg || 'No se pudo conectar con el servidor. Verificá que el backend esté en ejecución.'
+      );
+    } finally {
+      this.isSubmitting.set(false);
     }
-
-    this.router.navigate(['/dashboard']);
   }
-
-  trackByProfId(_: number, p: Professional): string { return p._id; }
 }
