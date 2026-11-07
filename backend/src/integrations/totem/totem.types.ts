@@ -15,3 +15,15 @@ export interface TotemPatientRecord extends PacienteDetalle {
   profesional?: string;
   createdAt?: string;
 }
+
+/**
+ * Representación simplificada de un profesional para sincronizar con la base de datos del tótem.
+ * Solo contiene _id, nombre, apellido, matrícula y estado activo.
+ */
+export interface TotemProfessionalSync {
+  _id: string;
+  nombre: string;
+  apellido: string;
+  matricula: string;
+  activo: boolean;
+}

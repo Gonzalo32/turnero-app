@@ -33,4 +33,18 @@ router.post('/patient', requireTotemApiKey, async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/integrations/totem/professionals
+ * El tótem llama este endpoint al arrancar o en su chequeo periódico para sincronizar
+ * su colección local de profesionales activos.
+ */
+router.get('/professionals', requireTotemApiKey, async (_req, res, next) => {
+  try {
+    const data = await totemIntegrationService.getActiveProfessionalsForTotem();
+    res.json({ success: true, data, message: 'Profesionales obtenidos correctamente' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

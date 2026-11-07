@@ -1,5 +1,6 @@
 import { Professional, IProfessional } from './professional.model';
 import { createError } from '../../middlewares/error.middleware';
+import { totemIntegrationService } from '../../integrations/totem/totem.service';
 import { logger } from '../../utils/logger';
 import bcrypt from 'bcryptjs';
 
@@ -90,6 +91,15 @@ export class ProfessionalService {
     await newProfessional.save();
     logger.info(`[ProfessionalService] Odontólogo creado: ${newProfessional.lastName}, ${newProfessional.firstName} (${newProfessional._id})`);
 
+    // Sincronizar en tiempo real con la base de datos del tótem
+    totemIntegrationService.syncProfessionalToTotem({
+      _id: newProfessional._id.toString(),
+      nombre: newProfessional.firstName,
+      apellido: newProfessional.lastName,
+      matricula: newProfessional.licenseNumber || '',
+      activo: true,
+    }).catch(err => logger.warn(`[ProfessionalService] Error notificando al tótem: ${err}`));
+
     // Devolver objeto sin la propiedad password
     const result = newProfessional.toObject() as IProfessional;
     delete (result as any).password;
@@ -129,6 +139,15 @@ export class ProfessionalService {
     await prof.save();
     logger.info(`[ProfessionalService] Odontólogo actualizado: ${prof._id}`);
 
+    // Sincronizar actualización con la base de datos del tótem
+    totemIntegrationService.syncProfessionalToTotem({
+      _id: prof._id.toString(),
+      nombre: prof.firstName,
+      apellido: prof.lastName,
+      matricula: prof.licenseNumber || '',
+      activo: prof.active !== false,
+    }).catch(err => logger.warn(`[ProfessionalService] Error notificando al tótem: ${err}`));
+
     const result = prof.toObject() as IProfessional;
     delete (result as any).password;
     return result;
@@ -144,6 +163,16 @@ export class ProfessionalService {
 
     if (!prof) throw createError('Profesional no encontrado', 404, 'PROFESSIONAL_NOT_FOUND');
     logger.info(`[ProfessionalService] Profesional desactivado: ${id}`);
+
+    // Sincronizar desactivación (soft-delete) con el tótem
+    totemIntegrationService.syncProfessionalToTotem({
+      _id: prof._id.toString(),
+      nombre: prof.firstName,
+      apellido: prof.lastName,
+      matricula: prof.licenseNumber || '',
+      activo: false,
+    }).catch(err => logger.warn(`[ProfessionalService] Error notificando desactivación al tótem: ${err}`));
+
     return prof;
   }
 }

@@ -19,6 +19,7 @@ export const config = {
   corsOrigin: process.env['CORS_ORIGIN'] ?? 'http://localhost:4300',
   mongodbUri: requireEnv('MONGODB_URI'),
   totemApiKey: requireEnv('TOTEM_API_KEY'),
+  totemApiUrl: process.env['TOTEM_API_URL'] ?? 'http://localhost:3000',
   totemMongodbUri: process.env['TOTEM_MONGODB_URI'] ?? '',
   jwtSecret: process.env['JWT_SECRET'] ?? 'dev_secret_inseguro',
 } as const;
