@@ -94,6 +94,27 @@ export class ProfessionalsService {
   }
 
   /**
+   * Desactiva lógicamente (soft delete) un odontólogo y actualiza la lista.
+   */
+  async deactivateProfessional(id: string): Promise<Professional> {
+    try {
+      const res = await firstValueFrom(
+        this.http.delete<ApiResponse<Professional>>(`${this.apiUrl}/${id}`)
+      );
+
+      if (res.success && res.data) {
+        await this.loadProfessionals();
+        return res.data;
+      }
+      throw new Error(res.message || 'Error desconocido al eliminar odontólogo');
+    } catch (err: any) {
+      const msg = err?.error?.message || err?.message || 'Error al eliminar odontólogo';
+      logger.error(`[ProfessionalsService] Error en deactivateProfessional: ${msg}`, err);
+      throw new Error(msg);
+    }
+  }
+
+  /**
    * Obtiene un profesional específico por su ID.
    */
   async getProfessionalById(id: string): Promise<Professional | null> {

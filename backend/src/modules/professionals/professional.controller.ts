@@ -48,3 +48,17 @@ export async function updateProfessional(req: Request, res: Response, next: Next
     next(err);
   }
 }
+
+/** DELETE /api/v1/professionals/:id — Desactivación lógica (soft delete) */
+export async function deactivateProfessional(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const deactivated = await professionalService.deactivateProfessional(req.params['id']);
+    res.json({
+      success: true,
+      data: deactivated,
+      message: 'Odontólogo eliminado exitosamente'
+    });
+  } catch (err) {
+    next(err);
+  }
+}

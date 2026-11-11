@@ -3,7 +3,8 @@ import {
   getProfessionals,
   getProfessionalById,
   createProfessional,
-  updateProfessional
+  updateProfessional,
+  deactivateProfessional
 } from './professional.controller';
 
 const router = Router();
@@ -19,5 +20,8 @@ router.post('/', createProfessional);
 
 /** PUT /api/v1/professionals/:id — Actualizar datos de un odontólogo */
 router.put('/:id', updateProfessional);
+
+/** DELETE /api/v1/professionals/:id — Desactivación lógica (soft delete) */
+router.delete('/:id', deactivateProfessional);
 
 export default router;

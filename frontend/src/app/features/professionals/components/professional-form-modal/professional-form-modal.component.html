@@ -115,7 +115,7 @@
             type="text"
             class="field-input"
             formControlName="licenseNumber"
-            placeholder="Ej: MN 1234 o MP 5678"
+            placeholder="Ej: 1234"
             [class.field-input--error]="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched"
           />
           <span class="field-error" *ngIf="form.get('licenseNumber')?.invalid && form.get('licenseNumber')?.touched">

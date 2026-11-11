@@ -24,43 +24,64 @@ export class ProfessionalsListComponent implements OnInit {
   readonly isModalOpen = signal<boolean>(false);
   readonly editingProfessional = signal<Professional | null>(null);
 
-  /** Mensaje de éxito tras guardar */
+  /** Control del modal de confirmación de baja lógica */
+  readonly deletingProfessional = signal<Professional | null>(null);
+  readonly deleting = signal<boolean>(false);
+  readonly deleteError = signal<string | null>(null);
+
+  /** Mensaje de éxito tras guardar o desactivar */
   readonly successMessage = signal<string | null>(null);
 
-  /** Acciones al final de cada fila (lápiz para editar) */
+  /** Acciones al final de cada fila (editar y eliminar lógico) */
   readonly actions: TableAction<Professional>[] = [
     {
       id: 'edit',
       label: 'Editar odontólogo',
       icon: 'edit'
+    },
+    {
+      id: 'delete',
+      label: 'Eliminar odontólogo',
+      icon: 'delete',
+      variant: 'danger'
     }
   ];
 
-  /** Configuración de columnas para la tabla genérica (sin prefijo Dr/a.) */
+  /** Configuración de columnas para la tabla genérica (sin prefijo Dr/a. ni autocompletado de matrícula) */
   readonly columns: TableColumn<Professional>[] = [
     {
       key: 'lastName',
       header: 'Odontólogo',
       type: 'avatar',
-      width: '45%',
+      width: '28%',
       format: (_, row) => `${row.lastName}, ${row.firstName}`
     },
     {
       key: 'licenseNumber',
       header: 'Matrícula',
       type: 'text',
-      width: '35%',
-      format: (val) => {
-        if (!val) return 'Sin matrícula';
-        const str = String(val).trim();
-        return /^(MN|MP)/i.test(str) ? str : `MN ${str}`;
-      }
+      width: '16%',
+      format: (val) => (val ? String(val).trim() : 'Sin matrícula')
+    },
+    {
+      key: 'phone',
+      header: 'Teléfono',
+      type: 'text',
+      width: '18%',
+      format: (val) => (val ? String(val).trim() : '—')
+    },
+    {
+      key: 'email',
+      header: 'Correo',
+      type: 'text',
+      width: '24%',
+      format: (val) => (val ? String(val).trim() : '—')
     },
     {
       key: 'active',
       header: 'Estado',
       type: 'badge',
-      width: '15%',
+      width: '14%',
       align: 'center',
       format: (val) => (val ? 'Activo' : 'Inactivo'),
       badgeClass: (val) => (val ? 'badge-active' : 'badge-inactive')
@@ -84,6 +105,32 @@ export class ProfessionalsListComponent implements OnInit {
     if (event.action === 'edit') {
       this.editingProfessional.set(event.row);
       this.isModalOpen.set(true);
+    } else if (event.action === 'delete') {
+      this.deleteError.set(null);
+      this.deletingProfessional.set(event.row);
+    }
+  }
+
+  onDeleteCancel(): void {
+    if (this.deleting()) return;
+    this.deletingProfessional.set(null);
+    this.deleteError.set(null);
+  }
+
+  async onDeleteConfirm(): Promise<void> {
+    const prof = this.deletingProfessional();
+    if (!prof || this.deleting()) return;
+
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    try {
+      await this.professionalsService.deactivateProfessional(prof._id);
+      this.deletingProfessional.set(null);
+      this.showSuccess(`Odontólogo ${prof.lastName}, ${prof.firstName} eliminado exitosamente.`);
+    } catch (err: any) {
+      this.deleteError.set(err?.message || 'No se pudo eliminar el odontólogo');
+    } finally {
+      this.deleting.set(false);
     }
   }
 
@@ -98,7 +145,11 @@ export class ProfessionalsListComponent implements OnInit {
     this.editingProfessional.set(null);
 
     const actionText = isEdit ? 'actualizado' : 'creado';
-    this.successMessage.set(`Odontólogo ${prof.lastName}, ${prof.firstName} ${actionText} exitosamente.`);
+    this.showSuccess(`Odontólogo ${prof.lastName}, ${prof.firstName} ${actionText} exitosamente.`);
+  }
+
+  private showSuccess(message: string): void {
+    this.successMessage.set(message);
     setTimeout(() => {
       this.successMessage.set(null);
     }, 4500);
