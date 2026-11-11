@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { queueService, AddToQueueResult } from '../../modules/queue/queue.service';
 import { QueueSource } from '../../modules/queue/queue.types';
 import { Professional } from '../../modules/professionals/professional.model';
@@ -8,13 +9,31 @@ import { logger } from '../../utils/logger';
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/**
- * Servicio de integración con el tótem.
- * Responsable de la comunicación bidireccional entre el turnero y el tótem:
- * 1. Procesa los registros de pacientes entrantes desde el tótem.
- * 2. Sincroniza la lista y modificaciones de profesionales hacia el tótem.
- */
 export class TotemIntegrationService {
+  private streamClients = new Set<Response>();
+
+  /** Registra un cliente tótem escuchando eventos en tiempo real vía SSE */
+  registerStreamClient(res: Response): () => void {
+    this.streamClients.add(res);
+    logger.info(`[TotemIntegration] Tótem conectado al stream en tiempo real (clientes: ${this.streamClients.size})`);
+    return () => {
+      this.streamClients.delete(res);
+      logger.info(`[TotemIntegration] Tótem desconectado del stream (clientes: ${this.streamClients.size})`);
+    };
+  }
+
+  /** Emite un evento SSE hacia todos los tótems conectados */
+  private notifyStreamClients(eventName: string, payload: unknown): void {
+    if (this.streamClients.size === 0) return;
+    const message = `event: ${eventName}\ndata: ${JSON.stringify(payload)}\n\n`;
+    for (const client of this.streamClients) {
+      try {
+        client.write(message);
+      } catch {
+        this.streamClients.delete(client);
+      }
+    }
+  }
 
   /** Obtiene la lista de profesionales activos en el formato requerido por el tótem */
   async getActiveProfessionalsForTotem(): Promise<TotemProfessionalSync[]> {
@@ -32,11 +51,12 @@ export class TotemIntegrationService {
     }));
   }
 
-  /**
-   * Sincroniza un profesional individual con el tótem vía HTTP POST.
-   * Maneja errores en segundo plano para no bloquear las operaciones del turnero.
-   */
   async syncProfessionalToTotem(data: TotemProfessionalSync): Promise<void> {
+    // Notificar primero por stream SSE (funciona incluso cuando el tótem está detrás de NAT)
+    this.notifyStreamClients('professionals-updated', data);
+
+    if (!config.totemApiUrl) return;
+
     try {
       const url = `${config.totemApiUrl}/api/professionals/sync`;
       const response = await fetch(url, {
@@ -63,6 +83,10 @@ export class TotemIntegrationService {
    * Sincronización masiva de todos los profesionales activos hacia el tótem.
    */
   async syncAllProfessionalsToTotem(): Promise<void> {
+    this.notifyStreamClients('professionals-updated', { fullSync: true });
+
+    if (!config.totemApiUrl) return;
+
     try {
       const list = await this.getActiveProfessionalsForTotem();
       const url = `${config.totemApiUrl}/api/professionals/bulk-sync`;

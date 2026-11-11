@@ -47,4 +47,29 @@ router.get('/professionals', requireTotemApiKey, async (_req, res, next) => {
   }
 });
 
+
+router.get('/professionals/stream', requireTotemApiKey, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  res.write(': connected\n\n');
+  const unregister = totemIntegrationService.registerStreamClient(res);
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      clearInterval(heartbeat);
+    }
+  }, 25_000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unregister();
+  });
+});
+
 export default router;

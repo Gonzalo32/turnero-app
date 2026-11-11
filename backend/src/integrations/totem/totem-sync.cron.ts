@@ -25,3 +25,4 @@ export function startTotemDailySync(): void {
     });
   }, INTERVALO_24_HORAS);
 }
+
