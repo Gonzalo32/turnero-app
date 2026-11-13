@@ -12,7 +12,17 @@ export class SessionService {
 
   private getSavedProfessional(): Professional | null {
     try {
-      const saved = localStorage.getItem('session_professional');
+      let saved = sessionStorage.getItem('session_professional');
+      if (!saved) {
+        saved = localStorage.getItem('session_professional');
+        if (saved) {
+          sessionStorage.setItem('session_professional', saved);
+          const profId = localStorage.getItem('session_prof_id');
+          if (profId) sessionStorage.setItem('session_prof_id', profId);
+          localStorage.removeItem('session_professional');
+          localStorage.removeItem('session_prof_id');
+        }
+      }
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -20,23 +30,40 @@ export class SessionService {
   }
 
   private getSavedOffice(): string {
-    return localStorage.getItem('session_office') || '';
+    let saved = sessionStorage.getItem('session_office');
+    if (!saved) {
+      saved = localStorage.getItem('session_office');
+      if (saved) {
+        sessionStorage.setItem('session_office', saved);
+        localStorage.removeItem('session_office');
+      }
+    }
+    return saved || '';
   }
 
   login(professional: Professional, office: string): void {
     this.professional.set(professional);
     this.office.set(office);
-    localStorage.setItem('session_professional', JSON.stringify(professional));
-    localStorage.setItem('session_prof_id', professional._id);
-    localStorage.setItem('session_office', office);
-  }
-
-  logout(): void {
-    this.professional.set(null);
-    this.office.set('');
+    sessionStorage.setItem('session_professional', JSON.stringify(professional));
+    sessionStorage.setItem('session_prof_id', professional._id);
+    sessionStorage.setItem('session_office', office);
     localStorage.removeItem('session_professional');
     localStorage.removeItem('session_prof_id');
     localStorage.removeItem('session_office');
+  }
+
+  logout(): void {
+    const currentId = this.professional()?._id;
+    this.professional.set(null);
+    this.office.set('');
+    sessionStorage.removeItem('session_professional');
+    sessionStorage.removeItem('session_prof_id');
+    sessionStorage.removeItem('session_office');
+    if (!currentId || localStorage.getItem('session_prof_id') === currentId) {
+      localStorage.removeItem('session_professional');
+      localStorage.removeItem('session_prof_id');
+      localStorage.removeItem('session_office');
+    }
   }
 
   get isLoggedIn(): boolean {

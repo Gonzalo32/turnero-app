@@ -22,7 +22,12 @@ export class SocketService implements OnDestroy {
 
   /** Conecta al servidor Socket.IO */
   connect(): void {
-    if (this.socket?.connected) return;
+    if (this.socket) {
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+      return;
+    }
 
     this.socket = io(environment.socketUrl, {
       transports: ['websocket'],
@@ -101,6 +106,9 @@ export class SocketService implements OnDestroy {
    * Devuelve una función de cleanup para usar en ngOnDestroy.
    */
   on<T>(event: string, callback: (data: T) => void): () => void {
+    if (!this.socket) {
+      this.connect();
+    }
     this.socket?.on(event, callback);
     return () => this.socket?.off(event, callback);
   }

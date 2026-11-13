@@ -95,3 +95,13 @@ a {
 button, select, input, textarea {
   font-family: inherit;
 }
+
+/* Contención de scroll para modales nativos <dialog> */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}

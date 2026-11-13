@@ -1,9 +1,9 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, OfficeConflict } from '../../../core/services/auth.service';
 import { SessionService } from '../../../core/services/session.service';
 
 @Component({
@@ -17,6 +17,8 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private session = inject(SessionService);
 
+  @ViewChild('conflictDialog') conflictDialogRef?: ElementRef<HTMLDialogElement>;
+
   email = signal('');
   password = signal('');
   selectedOffice = signal('');
@@ -24,6 +26,7 @@ export class LoginComponent implements OnInit {
   showPassword = signal(false);
   isSubmitting = signal(false);
   errorMsg = signal('');
+  officeConflict = signal<OfficeConflict | null>(null);
 
   readonly offices = Array.from({ length: 12 }, (_, i) => `Consultorio ${i + 1}`);
 
@@ -48,7 +51,7 @@ export class LoginComponent implements OnInit {
     this.showPassword.update(v => !v);
   }
 
-  async login(): Promise<void> {
+  async login(force = false): Promise<void> {
     if (!this.canLogin()) return;
 
     this.errorMsg.set('');
@@ -60,8 +63,18 @@ export class LoginComponent implements OnInit {
 
     try {
       const res = await firstValueFrom(
-        this.authService.login({ email, password, office })
+        this.authService.login({ email, password, office, force })
       );
+
+      if (res.success && res.data?.conflict && !force) {
+        this.officeConflict.set(res.data.conflict);
+        const dialog = this.conflictDialogRef?.nativeElement;
+        if (dialog && !dialog.open) {
+          dialog.returnValue = '';
+          dialog.showModal();
+        }
+        return;
+      }
 
       if (res.success && res.data?.user) {
         this.session.login(res.data.user, office);
@@ -76,6 +89,21 @@ export class LoginComponent implements OnInit {
       );
     } finally {
       this.isSubmitting.set(false);
+    }
+  }
+
+  onConflictDialogClose(): void {
+    const dialog = this.conflictDialogRef?.nativeElement;
+    const action = dialog?.returnValue ?? '';
+    if (dialog) {
+      dialog.returnValue = '';
+    }
+
+    const hasConflict = this.officeConflict() !== null;
+    this.officeConflict.set(null);
+
+    if (action === 'continue' && hasConflict) {
+      this.login(true);
     }
   }
 }

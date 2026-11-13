@@ -150,4 +150,55 @@
     </form>
 
   </div>
+
+  <!-- Modal nativo de aviso de consultorio en uso -->
+  <dialog
+    #conflictDialog
+    id="office-conflict-dialog"
+    aria-labelledby="office-conflict-title"
+    (close)="onConflictDialogClose()"
+    class="m-auto w-full max-w-md rounded-3xl border border-brand-purple/20 bg-white p-7 sm:p-8 text-app-text shadow-2xl backdrop:bg-black/45 backdrop:backdrop-blur-xs"
+  >
+    <div class="flex flex-col items-center text-center">
+      <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+
+      <h2 id="office-conflict-title" class="font-brand text-xl font-bold text-app-text mb-2">
+        Consultorio en uso
+      </h2>
+
+      <p class="text-sm text-app-muted leading-relaxed mb-6" *ngIf="officeConflict() as conflict">
+        El <strong class="text-app-text font-semibold">{{ conflict.office }}</strong> se está utilizando actualmente por
+        <strong class="text-brand-purple font-semibold">{{ conflict.occupiedBy.firstName }} {{ conflict.occupiedBy.lastName }}</strong>.
+        <br class="hidden sm:inline" />
+        ¿Deseás expulsar e iniciar sesión en este consultorio?
+      </p>
+
+      <form ngNoForm method="dialog" class="flex w-full gap-3">
+        <button
+          type="submit"
+          value="cancel"
+          id="btn-conflict-cancel"
+          autofocus
+          class="flex-1 py-3 px-4 rounded-xl border border-brand-purple/25 bg-app-main text-app-text font-semibold text-sm hover:bg-[#ebe6eb] transition-colors duration-150 cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          value="continue"
+          id="btn-conflict-continue"
+          class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-brand-purple to-brand-purple-light text-white font-bold text-sm shadow-md shadow-brand-purple/25 hover:shadow-lg hover:shadow-brand-purple/35 transition-all duration-150 cursor-pointer"
+        >
+          Seguir
+        </button>
+      </form>
+    </div>
+  </dialog>
+
 </div>

@@ -77,3 +77,22 @@ export const emitPatientCalled = (e: IAtencion) => emitToProfessional(QUEUE_EVEN
 export const emitPatientStarted = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_STARTED, e);
 export const emitPatientCompleted = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_COMPLETED, e);
 export const emitPatientCancelled = (e: IAtencion) => emitToProfessional(QUEUE_EVENTS.PATIENT_CANCELLED, e);
+
+export interface SessionDisplacedPayload {
+  office: string;
+  newProfessionalId: string;
+  displacedProfessionalIds: string[];
+  replacedByName: string;
+}
+
+/**
+ * Notifica en tiempo real que un consultorio pasó a ser ocupado por otro profesional,
+ * para desloguear automáticamente al odontólogo anterior.
+ */
+export function emitSessionDisplaced(payload: SessionDisplacedPayload): void {
+  if (!io) return;
+  io.emit('auth:session-displaced', payload);
+  logger.info(
+    `[Socket] auth:session-displaced emitido en ${payload.office} (nuevo: ${payload.newProfessionalId}, desplazados: ${payload.displacedProfessionalIds.join(', ') || 'ninguno'})`
+  );
+}
