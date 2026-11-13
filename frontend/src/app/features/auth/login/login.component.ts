@@ -63,8 +63,8 @@ export class LoginComponent implements OnInit {
         this.authService.login({ email, password, office })
       );
 
-      if (res.success && res.data?.user) {
-        this.session.login(res.data.user, office);
+      if (res.success && res.data?.user && res.data.token) {
+        this.session.login(res.data.user, office, res.data.token);
         this.router.navigate(['/dashboard']);
       } else {
         this.errorMsg.set(res.message || 'Error al iniciar sesión');

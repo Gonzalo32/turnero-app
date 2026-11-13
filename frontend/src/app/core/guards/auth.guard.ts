@@ -14,6 +14,23 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
+  session.logout();
   router.navigate(['/login']);
+  return false;
+};
+
+/**
+ * Pantallas de administración. Es solo navegación: la API rechaza con 403
+ * cualquier operación de administración de un usuario que no sea ADMIN.
+ */
+export const adminGuard: CanActivateFn = () => {
+  const session = inject(SessionService);
+  const router = inject(Router);
+
+  if (session.isAdmin()) {
+    return true;
+  }
+
+  router.navigate(['/dashboard']);
   return false;
 };

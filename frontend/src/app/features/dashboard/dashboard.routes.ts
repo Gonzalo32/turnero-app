@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '../../core/guards/auth.guard';
+import { authGuard, adminGuard } from '../../core/guards/auth.guard';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -16,6 +16,7 @@ export const DASHBOARD_ROUTES: Routes = [
       },
       {
         path: 'odontologos',
+        canActivate: [adminGuard],
         loadChildren: () =>
           import('../professionals/professionals.routes').then(m => m.PROFESSIONALS_ROUTES)
       },

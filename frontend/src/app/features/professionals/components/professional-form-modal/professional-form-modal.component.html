@@ -194,7 +194,7 @@
               [type]="showPassword() ? 'text' : 'password'"
               class="field-input"
               formControlName="password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched"
             />
             <button
@@ -219,7 +219,7 @@
             La contraseña es obligatoria.
           </span>
           <span class="field-error" *ngIf="form.get('password')?.hasError('minlength') && form.get('password')?.touched">
-            La contraseña debe tener al menos 6 caracteres.
+            La contraseña debe tener al menos 8 caracteres.
           </span>
         </div>
       </div>

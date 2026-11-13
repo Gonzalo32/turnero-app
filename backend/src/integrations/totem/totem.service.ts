@@ -4,7 +4,6 @@ import { QueueSource } from '../../modules/queue/queue.types';
 import { Professional } from '../../modules/professionals/professional.model';
 import { createError } from '../../middlewares/error.middleware';
 import { TotemPatientRecord, TotemProfessionalSync } from './totem.types';
-import { config } from '../../config/env';
 import { logger } from '../../utils/logger';
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -51,63 +50,13 @@ export class TotemIntegrationService {
     }));
   }
 
-  async syncProfessionalToTotem(data: TotemProfessionalSync): Promise<void> {
-    // Notificar primero por stream SSE (funciona incluso cuando el tótem está detrás de NAT)
-    this.notifyStreamClients('professionals-updated', data);
-
-    if (!config.totemApiUrl) return;
-
-    try {
-      const url = `${config.totemApiUrl}/api/professionals/sync`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-totem-api-key': config.totemApiKey,
-        },
-        body: JSON.stringify(data),
-        signal: AbortSignal.timeout(4000),
-      });
-
-      if (response.ok) {
-        logger.info(`[TotemIntegration] ✓ Profesional sincronizado con el tótem: ${data.nombre} ${data.apellido} (${data._id})`);
-      } else {
-        logger.warn(`[TotemIntegration] Respuesta no exitosa al sincronizar con tótem: HTTP ${response.status}`);
-      }
-    } catch (err: any) {
-      logger.warn(`[TotemIntegration] Tótem no alcanzable para sincronización directa en tiempo real: ${err.message}`);
-    }
-  }
-
   /**
-   * Sincronización masiva de todos los profesionales activos hacia el tótem.
+   * Avisa a los tótems conectados que cambió la lista de profesionales.
+   * El turnero nunca llama al tótem: el tótem escucha este stream y vuelve a pedir la lista.
+   * El evento no lleva datos (AGENTS.md §26, §58).
    */
-  async syncAllProfessionalsToTotem(): Promise<void> {
-    this.notifyStreamClients('professionals-updated', { fullSync: true });
-
-    if (!config.totemApiUrl) return;
-
-    try {
-      const list = await this.getActiveProfessionalsForTotem();
-      const url = `${config.totemApiUrl}/api/professionals/bulk-sync`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-totem-api-key': config.totemApiKey,
-        },
-        body: JSON.stringify({ professionals: list }),
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (response.ok) {
-        logger.info(`[TotemIntegration] ✓ Sincronización masiva con el tótem completada (${list.length} profesionales)`);
-      } else {
-        logger.warn(`[TotemIntegration] Respuesta no exitosa en sincronización masiva con tótem: HTTP ${response.status}`);
-      }
-    } catch (err: any) {
-      logger.warn(`[TotemIntegration] Tótem no alcanzable para sincronización masiva: ${err.message}`);
-    }
+  notifyProfessionalsUpdated(): void {
+    this.notifyStreamClients('professionals-updated', {});
   }
 
   async processTotemPatient(record: TotemPatientRecord): Promise<AddToQueueResult> {

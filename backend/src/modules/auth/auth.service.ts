@@ -1,4 +1,5 @@
-import { Professional } from '../professionals/professional.model';
+import { Professional, UserRole } from '../professionals/professional.model';
+import { signToken } from '../../middlewares/auth.middleware';
 import { LoginDto, LoginResponseData } from './auth.types';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
@@ -12,9 +13,10 @@ export class AuthService {
    * - El consultorio seleccionado se actualiza en el registro del usuario.
    */
   async login(dto: LoginDto): Promise<LoginResponseData> {
-    const emailRaw = dto.email?.trim();
-    const password = dto.password?.trim();
-    const office = dto.office?.trim();
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const emailRaw = str(dto.email);
+    const password = str(dto.password);
+    const office = str(dto.office);
 
     if (!emailRaw || !password || !office) {
       throw createError(
@@ -47,9 +49,9 @@ export class AuthService {
     user.office = office;
     await user.save();
 
-    logger.info(
-      `[AuthService] Inicio de sesión exitoso: ${user.firstName} ${user.lastName} (${user.email || 'sin-correo'}) en ${office}`
-    );
+    logger.info(`[AuthService] Inicio de sesión exitoso: ${user._id} en ${office}`);
+
+    const role = user.role ?? UserRole.PROFESSIONAL;
 
     return {
       user: {
@@ -59,7 +61,9 @@ export class AuthService {
         email: user.email || '',
         office: user.office,
         active: user.active,
+        role,
       },
+      token: signToken({ id: user._id.toString(), role }),
     };
   }
 }

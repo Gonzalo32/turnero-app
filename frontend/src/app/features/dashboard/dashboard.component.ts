@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SessionService } from '../../core/services/session.service';
+import { SocketService } from '../../core/services/socket.service';
 import { professionalFullName } from '../queue/models/queue.model';
 
 @Component({
@@ -14,9 +15,11 @@ import { professionalFullName } from '../queue/models/queue.model';
 export class DashboardComponent implements OnDestroy {
   private session = inject(SessionService);
   private router = inject(Router);
+  private socketService = inject(SocketService);
 
   readonly professional = this.session.professional;
   readonly office = this.session.office;
+  readonly isAdmin = this.session.isAdmin;
 
   /** Estado de visibilidad de la barra lateral (persiste preferencia local) */
   readonly isSidebarHidden = signal<boolean>(
@@ -106,6 +109,7 @@ export class DashboardComponent implements OnDestroy {
   });
 
   logout(): void {
+    this.socketService.disconnect();
     this.session.logout();
     this.router.navigate(['/login']);
   }

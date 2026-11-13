@@ -39,6 +39,9 @@ export interface QueueEntry {
   cancelledAt?: string;
 }
 
+/** Roles del sistema: espejo de UserRole del backend */
+export type UserRole = 'ADMIN' | 'PROFESSIONAL';
+
 /** Profesional del sistema */
 export interface Professional {
   _id: string;
@@ -48,6 +51,7 @@ export interface Professional {
   office?: string;
   email?: string;
   active: boolean;
+  role?: UserRole;
 }
 
 /** Nombre completo del profesional */

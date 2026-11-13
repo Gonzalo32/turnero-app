@@ -1,7 +1,8 @@
-import { Injectable, OnDestroy, signal } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { logger } from '../utils/logger';
+import { SessionService } from './session.service';
 
 /**
  * Servicio centralizado de Socket.IO.
@@ -13,6 +14,7 @@ import { logger } from '../utils/logger';
  */
 @Injectable({ providedIn: 'root' })
 export class SocketService implements OnDestroy {
+  private session = inject(SessionService);
   private socket: Socket | null = null;
   private professionalRoom: string | null = null;
   private isTvRoomJoined = false;
@@ -29,6 +31,8 @@ export class SocketService implements OnDestroy {
       reconnection: true,
       reconnectionDelay: 2000,
       reconnectionAttempts: Infinity,
+      // Función (no valor): en cada reconexión se envía el token vigente.
+      auth: (cb) => cb({ token: this.session.token() }),
     });
 
     this.socket.on('connect', () => {
@@ -51,6 +55,8 @@ export class SocketService implements OnDestroy {
     this.socket.on('connect_error', (err) => {
       logger.error('[SocketService] Error de conexión:', err.message);
       this.connected.set(false);
+      // El servidor rechazó el token: no tiene sentido reintentar con el mismo.
+      if (err.message === 'UNAUTHORIZED') this.disconnect();
     });
   }
 

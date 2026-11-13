@@ -2,7 +2,12 @@ import { Professional, IProfessional } from './professional.model';
 import { createError } from '../../middlewares/error.middleware';
 import { totemIntegrationService } from '../../integrations/totem/totem.service';
 import { logger } from '../../utils/logger';
-import bcrypt from 'bcryptjs';
+
+/** Largo mínimo de contraseña, en alta y en modificación. */
+const MIN_PASSWORD_LENGTH = 8;
+
+/** Lo que ve un usuario no administrador de otro profesional (AGENTS.md §58). */
+const PUBLIC_FIELDS = '_id firstName lastName office active';
 
 export interface CreateProfessionalDto {
   firstName: string;
@@ -23,10 +28,13 @@ export interface UpdateProfessionalDto extends Partial<CreateProfessionalDto> {
 
 export class ProfessionalService {
 
-  /** Obtiene todos los profesionales activos, ordenados por apellido, sin exponer contraseña */
-  async getActiveProfessionals(): Promise<IProfessional[]> {
+  /**
+   * Profesionales activos ordenados por apellido, nunca con contraseña.
+   * Los datos personales (DNI, correo, teléfono, domicilio) solo van si `full` (admin).
+   */
+  async getActiveProfessionals(full: boolean): Promise<IProfessional[]> {
     return Professional.find({ active: true })
-      .select('-password')
+      .select(full ? '-password' : PUBLIC_FIELDS)
       .sort({ lastName: 1 })
       .lean<IProfessional[]>();
   }
@@ -52,8 +60,8 @@ export class ProfessionalService {
       throw createError('El correo electrónico es obligatorio', 400, 'VALIDATION_ERROR');
     }
 
-    if (!data.password || data.password.length < 6) {
-      throw createError('La contraseña es obligatoria y debe tener al menos 6 caracteres', 400, 'VALIDATION_ERROR');
+    if (typeof data.password !== 'string' || data.password.length < MIN_PASSWORD_LENGTH) {
+      throw createError(`La contraseña es obligatoria y debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`, 400, 'VALIDATION_ERROR');
     }
 
     // Verificar si el correo ya está registrado
@@ -89,16 +97,10 @@ export class ProfessionalService {
     });
 
     await newProfessional.save();
-    logger.info(`[ProfessionalService] Odontólogo creado: ${newProfessional.lastName}, ${newProfessional.firstName} (${newProfessional._id})`);
+    logger.info(`[ProfessionalService] Odontólogo creado: ${newProfessional._id}`);
 
-    // Sincronizar en tiempo real con la base de datos del tótem
-    totemIntegrationService.syncProfessionalToTotem({
-      _id: newProfessional._id.toString(),
-      nombre: newProfessional.firstName,
-      apellido: newProfessional.lastName,
-      matricula: newProfessional.licenseNumber || '',
-      activo: true,
-    }).catch(err => logger.warn(`[ProfessionalService] Error notificando al tótem: ${err}`));
+    // Avisar al tótem (ya persistido): él vuelve a pedir la lista de profesionales.
+    totemIntegrationService.notifyProfessionalsUpdated();
 
     // Devolver objeto sin la propiedad password
     const result = newProfessional.toObject() as IProfessional;
@@ -119,7 +121,7 @@ export class ProfessionalService {
     if (data.phone !== undefined) prof.phone = data.phone?.trim();
     if (data.address !== undefined) prof.address = data.address?.trim();
     if (data.office !== undefined) prof.office = data.office?.trim();
-    if (data.active !== undefined) prof.active = data.active;
+    if (typeof data.active === 'boolean') prof.active = data.active;
 
     if (data.email) {
       const emailNormalized = data.email.trim().toLowerCase();
@@ -133,20 +135,17 @@ export class ProfessionalService {
     }
 
     if (data.password) {
+      if (typeof data.password !== 'string' || data.password.length < MIN_PASSWORD_LENGTH) {
+        throw createError(`La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`, 400, 'VALIDATION_ERROR');
+      }
       prof.password = data.password;
     }
 
     await prof.save();
     logger.info(`[ProfessionalService] Odontólogo actualizado: ${prof._id}`);
 
-    // Sincronizar actualización con la base de datos del tótem
-    totemIntegrationService.syncProfessionalToTotem({
-      _id: prof._id.toString(),
-      nombre: prof.firstName,
-      apellido: prof.lastName,
-      matricula: prof.licenseNumber || '',
-      activo: prof.active !== false,
-    }).catch(err => logger.warn(`[ProfessionalService] Error notificando al tótem: ${err}`));
+    // Avisar al tótem (ya persistido): él vuelve a pedir la lista de profesionales.
+    totemIntegrationService.notifyProfessionalsUpdated();
 
     const result = prof.toObject() as IProfessional;
     delete (result as any).password;
@@ -164,14 +163,8 @@ export class ProfessionalService {
     if (!prof) throw createError('Profesional no encontrado', 404, 'PROFESSIONAL_NOT_FOUND');
     logger.info(`[ProfessionalService] Profesional desactivado: ${id}`);
 
-    // Sincronizar desactivación (soft-delete) con el tótem
-    totemIntegrationService.syncProfessionalToTotem({
-      _id: prof._id.toString(),
-      nombre: prof.firstName,
-      apellido: prof.lastName,
-      matricula: prof.licenseNumber || '',
-      activo: false,
-    }).catch(err => logger.warn(`[ProfessionalService] Error notificando desactivación al tótem: ${err}`));
+    // Avisar al tótem (ya persistido): él vuelve a pedir la lista de profesionales.
+    totemIntegrationService.notifyProfessionalsUpdated();
 
     return prof;
   }

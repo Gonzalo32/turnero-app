@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { queueService } from './queue.service';
 import { QueueSource, CreateQueueEntryDto } from './queue.types';
 import { IAtencion } from '../atenciones/atencion.model';
-import { toPublicEntry } from './queue.socket';
+import { toPublicEntry, toTvEntry } from './queue.socket';
+import type { AuthUser } from '../../middlewares/auth.middleware';
 
 /**
  * Controller del módulo queue.
@@ -13,10 +14,10 @@ import { toPublicEntry } from './queue.socket';
  */
 
 /** Adapta una transición de estado (:id → entrada actualizada) a un handler Express */
-function transition(action: (id: string) => Promise<IAtencion>, message: string) {
+function transition(action: (id: string, actor: AuthUser) => Promise<IAtencion>, message: string) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const entry = await action(req.params['id']);
+      const entry = await action(req.params['id'], req.user!);
       res.json({ success: true, data: toPublicEntry(entry), message });
     } catch (err) {
       next(err);
@@ -27,9 +28,12 @@ function transition(action: (id: string) => Promise<IAtencion>, message: string)
 /** GET /api/v1/queue */
 export async function getQueue(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const professionalId = req.query['professionalId'] as string | undefined;
-    const entries = await queueService.getActiveQueue(professionalId);
-    res.json({ success: true, data: entries.map(toPublicEntry), message: null });
+    const raw = req.query['professionalId'];
+    const professionalId = typeof raw === 'string' && raw ? raw : undefined;
+    const entries = await queueService.getActiveQueue(professionalId, req.user!);
+    // Sin filtro es la vista general (pantalla de TV): no lleva DNI ni obra social (AGENTS.md §58).
+    const data = professionalId ? entries.map(toPublicEntry) : entries.map(toTvEntry);
+    res.json({ success: true, data, message: null });
   } catch (err) {
     next(err);
   }
@@ -59,10 +63,10 @@ export async function addToQueue(req: Request, res: Response, next: NextFunction
 }
 
 /** PATCH /api/v1/queue/:id/call */
-export const callPatient = transition((id) => queueService.callPatient(id), 'Paciente llamado');
+export const callPatient = transition((id, actor) => queueService.callPatient(id, actor), 'Paciente llamado');
 /** PATCH /api/v1/queue/:id/start */
-export const startAttention = transition((id) => queueService.startAttention(id), 'Atención iniciada');
+export const startAttention = transition((id, actor) => queueService.startAttention(id, actor), 'Atención iniciada');
 /** PATCH /api/v1/queue/:id/complete */
-export const completeAttention = transition((id) => queueService.completeAttention(id), 'Atención completada');
+export const completeAttention = transition((id, actor) => queueService.completeAttention(id, actor), 'Atención completada');
 /** PATCH /api/v1/queue/:id/cancel */
-export const cancelEntry = transition((id) => queueService.cancelEntry(id), 'Entrada cancelada');
+export const cancelEntry = transition((id, actor) => queueService.cancelEntry(id, actor), 'Entrada cancelada');

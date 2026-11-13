@@ -39,7 +39,7 @@ export class ProfessionalFormModalComponent implements OnInit {
       lastName: [prof?.lastName || '', [Validators.required, Validators.minLength(2)]],
       licenseNumber: [prof?.licenseNumber || '', [Validators.required]],
       email: [prof?.email || '', [Validators.required, Validators.email]],
-      password: ['', isEdit ? [Validators.minLength(6)] : [Validators.required, Validators.minLength(6)]],
+      password: ['', isEdit ? [Validators.minLength(8)] : [Validators.required, Validators.minLength(8)]],
       dni: [prof?.dni || '', [Validators.pattern(/^[0-9]{7,9}$/)]],
       birthDate: [prof?.birthDate ? prof.birthDate.substring(0, 10) : ''],
       phone: [prof?.phone || ''],

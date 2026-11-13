@@ -88,7 +88,7 @@ CORS_ORIGIN=http://localhost:4300
 TOTEM_API_KEY=<clave generada>
 ```
 
-El backend no arranca sin `MONGODB_URI` y `TOTEM_API_KEY`.
+El backend no arranca sin `MONGODB_URI`, `TOTEM_API_KEY` y `JWT_SECRET`. El seed necesita además `SEED_ADMIN_PASSWORD` y `SEED_DEFAULT_PASSWORD` (ver `docs/SEGURIDAD.md`).
 
 Instalar el backend y cargar los profesionales:
 
@@ -164,7 +164,7 @@ Cada profesional ve solo su propia cola. El turnero no tiene una pantalla de pac
 | El formulario en :5000 no guarda | Usar http://localhost:3000 después de `npm run build`. |
 | `Clave rechazada … revisar TOTEM_API_KEY` | Las claves de los dos `.env` no coinciden. Corregir y reiniciar. El tótem reintenta los avisos pendientes. |
 | `422 PROFESSIONAL_NOT_FOUND` | El nombre del profesional en el tótem no coincide con el seed ("Nombre Apellido"). Ejecutar `npm run seed`. |
-| El backend del turnero se cierra al arrancar | Falta `MONGODB_URI` o `TOTEM_API_KEY` en `backend/.env`. |
+| El backend del turnero se cierra al arrancar | Falta `MONGODB_URI`, `TOTEM_API_KEY` o `JWT_SECRET` en `backend/.env`. |
 | El paciente se guardó pero no aparece en la lista | Se ingresó al turnero con otro profesional. |
 
 Ver qué puertos están escuchando:

@@ -7,6 +7,8 @@ import {
   completeAttention,
   cancelEntry,
 } from './queue.controller';
+import { requireAuth, requireRole } from '../../middlewares/auth.middleware';
+import { UserRole } from '../professionals/professional.model';
 
 /**
  * Rutas del módulo queue.
@@ -14,11 +16,14 @@ import {
  */
 const router = Router();
 
+// Toda la cola requiere sesión; la pertenencia de cada entrada la valida el service.
+router.use(requireAuth);
+
 /** Obtener cola activa (opcionalmente por profesional) */
 router.get('/', getQueue);
 
-/** Agregar paciente a la cola */
-router.post('/', addToQueue);
+/** Agregar paciente a la cola (alta manual: solo admin; el tótem usa su propia ruta) */
+router.post('/', requireRole(UserRole.ADMIN), addToQueue);
 
 /** Llamar paciente (WAITING → CALLED) */
 router.patch('/:id/call', callPatient);

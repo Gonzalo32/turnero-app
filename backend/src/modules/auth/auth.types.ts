@@ -1,3 +1,5 @@
+import type { UserRole } from '../professionals/professional.model';
+
 export interface LoginDto {
   email: string;
   password: string;
@@ -11,8 +13,10 @@ export interface AuthUserData {
   email: string;
   office?: string;
   active: boolean;
+  role: UserRole;
 }
 
 export interface LoginResponseData {
   user: AuthUserData;
+  token: string;
 }

@@ -1,6 +1,7 @@
 import mongoose, { Types } from 'mongoose';
 import { Paciente } from '../patients/patient.model';
-import { Professional } from '../professionals/professional.model';
+import { Professional, UserRole } from '../professionals/professional.model';
+import type { AuthUser } from '../../middlewares/auth.middleware';
 import { Atencion, IAtencion } from '../atenciones/atencion.model';
 import { QueueStatus, QueueSource, CreateQueueEntryDto, ACTIVE_QUEUE_STATUSES } from './queue.types';
 import { createError } from '../../middlewares/error.middleware';
@@ -38,7 +39,11 @@ export class QueueService {
       for (const qe of legacyEntries) {
         const idOrigen = qe['sourceRecordId'] || qe['_id'].toString();
         const existing = await Atencion.findOne({ idOrigen });
-        if (!existing) {
+        // La colección legada no tiene validación: se descartan filas con referencias o estados inválidos.
+        const valid =
+          Types.ObjectId.isValid(qe['professionalId']) &&
+          (!qe['status'] || ACTIVE_QUEUE_STATUSES.includes(qe['status']));
+        if (!existing && valid) {
           const dni = qe['patientDni']?.trim() || 'SIN-DNI';
           const nombre = qe['patientFirstName']?.trim() || '';
           const apellido = qe['patientLastName']?.trim() || '';
@@ -64,7 +69,7 @@ export class QueueService {
           });
           await entry.populate('patientId', PATIENT_FIELDS);
           emitPatientAdded(entry);
-          logger.info(`[QueueService] Sincronizado desde queueentries: ${nombre} ${apellido}`);
+          logger.info(`[QueueService] Sincronizado desde queueentries: ${entry._id}`);
         }
       }
     } catch (err) {
@@ -73,7 +78,12 @@ export class QueueService {
   }
 
   /** Cola activa ordenada por llegada; _id desempata (AGENTS.md §16) */
-  async getActiveQueue(professionalId?: string): Promise<IAtencion[]> {
+  async getActiveQueue(professionalId: string | undefined, actor: AuthUser): Promise<IAtencion[]> {
+    // Un profesional solo puede pedir el detalle de su propia cola.
+    if (professionalId && actor.role !== UserRole.ADMIN && professionalId !== actor.id) {
+      throw createError('No tenés permisos para ver esta cola', 403, 'FORBIDDEN');
+    }
+
     await this.syncLegacyQueueEntries();
 
     const filter: Record<string, unknown> = { estado: { $in: ACTIVE_QUEUE_STATUSES } };
@@ -172,8 +182,8 @@ export class QueueService {
     return { entry, created: true, transferredFrom };
   }
 
-  async callPatient(entryId: string): Promise<IAtencion> {
-    const entry = await this.findActiveEntry(entryId);
+  async callPatient(entryId: string, actor: AuthUser): Promise<IAtencion> {
+    const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.CALLED;
     entry.llamadoAt = new Date();
     const saved = await entry.save();
@@ -181,8 +191,8 @@ export class QueueService {
     return saved;
   }
 
-  async startAttention(entryId: string): Promise<IAtencion> {
-    const entry = await this.findActiveEntry(entryId);
+  async startAttention(entryId: string, actor: AuthUser): Promise<IAtencion> {
+    const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.IN_ATTENTION;
     entry.inicioAtencionAt = new Date();
     const saved = await entry.save();
@@ -190,8 +200,8 @@ export class QueueService {
     return saved;
   }
 
-  async completeAttention(entryId: string): Promise<IAtencion> {
-    const entry = await this.findActiveEntry(entryId);
+  async completeAttention(entryId: string, actor: AuthUser): Promise<IAtencion> {
+    const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.COMPLETED;
     entry.finalizadoAt = new Date();
     const saved = await entry.save();
@@ -199,8 +209,8 @@ export class QueueService {
     return saved;
   }
 
-  async cancelEntry(entryId: string): Promise<IAtencion> {
-    const entry = await this.findActiveEntry(entryId);
+  async cancelEntry(entryId: string, actor: AuthUser): Promise<IAtencion> {
+    const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.CANCELLED;
     entry.canceladoAt = new Date();
     const saved = await entry.save();
@@ -208,14 +218,20 @@ export class QueueService {
     return saved;
   }
 
-  /** Las transiciones solo aplican a atenciones que siguen en la cola */
-  private async findActiveEntry(entryId: string): Promise<IAtencion> {
+  /**
+   * Las transiciones solo aplican a atenciones que siguen en la cola,
+   * y solo las puede ejecutar el profesional dueño de la entrada (o un admin).
+   */
+  private async findActiveEntry(entryId: string, actor: AuthUser): Promise<IAtencion> {
     if (!Types.ObjectId.isValid(entryId)) {
       throw createError('ID de entrada inválido', 400, 'INVALID_QUEUE_ENTRY_ID');
     }
     const entry = await Atencion.findById(entryId).populate('patientId', PATIENT_FIELDS);
     if (!entry) {
       throw createError('Entrada de cola no encontrada', 404, 'QUEUE_ENTRY_NOT_FOUND');
+    }
+    if (actor.role !== UserRole.ADMIN && entry.professionalId.toString() !== actor.id) {
+      throw createError('La entrada pertenece a otro profesional', 403, 'FORBIDDEN');
     }
     if (!ACTIVE_QUEUE_STATUSES.includes(entry.estado)) {
       throw createError('La entrada ya no está en la cola', 409, 'QUEUE_ENTRY_NOT_ACTIVE');

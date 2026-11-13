@@ -13,6 +13,8 @@ export interface LoginCredentials {
 
 export interface LoginResult {
   user: Professional;
+  /** JWT de sesión: va en Authorization: Bearer y en el handshake del socket */
+  token: string;
 }
 
 @Injectable({ providedIn: 'root' })

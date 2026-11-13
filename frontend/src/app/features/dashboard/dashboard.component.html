@@ -105,6 +105,7 @@
       </a>
 
       <a
+        *ngIf="isAdmin()"
         class="nav-item"
         routerLink="/dashboard/odontologos"
         routerLinkActive="nav-item--active"

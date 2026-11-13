@@ -8,6 +8,15 @@ import bcrypt from 'bcryptjs';
  * Regla AGENTS.md §53: Eliminación lógica (activo: false).
  * Regla AGENTS.md §54: Nunca almacenar passwords en texto plano (bcrypt).
  */
+/**
+ * Roles del sistema (AGENTS.md §56). CENTRALIZADO: usar siempre este enum.
+ * Los roles futuros (RECEPTIONIST, SUPERVISOR) se agregan acá.
+ */
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  PROFESSIONAL = 'PROFESSIONAL',
+}
+
 export interface IProfessional extends Document {
   _id: Types.ObjectId;
   firstName: string;
@@ -21,6 +30,7 @@ export interface IProfessional extends Document {
   address?: string;
   office?: string;
   active: boolean;
+  role: UserRole;
   createdAt?: Date;
   updatedAt?: Date;
 
@@ -40,6 +50,7 @@ const ProfessionalSchema = new Schema<IProfessional>(
     address: { type: String, trim: true },
     office: { type: String, trim: true },
     active: { type: Boolean, default: true },
+    role: { type: String, enum: Object.values(UserRole), default: UserRole.PROFESSIONAL },
   },
   {
     timestamps: true,

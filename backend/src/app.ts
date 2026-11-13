@@ -2,6 +2,8 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import { config } from './config/env';
 import { errorMiddleware } from './middlewares/error.middleware';
@@ -14,6 +16,9 @@ import mongoose from 'mongoose';
 import path from 'path';
 
 const app = express();
+
+// Detrás de un único reverse proxy (Caddy): necesario para que el rate limit vea la IP real.
+app.set('trust proxy', 1);
 
 // ── HTTP Server ──────────────────────────────────────────────────────────────
 const httpServer = createServer(app);
@@ -30,8 +35,15 @@ const io = new SocketIOServer(httpServer, {
 initQueueSocket(io);
 
 // ── Middleware ───────────────────────────────────────────────────────────────
+app.use(helmet());
 app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+
+// Tope general por IP. Holgado: todo el consultorio suele compartir una IP pública.
+app.use(
+  '/api/v1',
+  rateLimit({ windowMs: 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false })
+);
 
 // ── Rutas API v1 ─────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
@@ -45,11 +57,8 @@ app.use('/api/v1/integrations/totem', totemRoutes);
 app.get('/api/v1/health', (_req, res) => {
   res.json({
     success: true,
-    data: {
-      status: 'ok',
-      db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      socketClients: io.engine.clientsCount,
-    },
+    // Solo estado general: sin detalles internos para quien no está autenticado.
+    data: { status: mongoose.connection.readyState === 1 ? 'ok' : 'degraded' },
     message: null,
   });
 });

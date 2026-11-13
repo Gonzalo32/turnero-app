@@ -105,8 +105,12 @@ TERMINAL 2 — Frontend (App)
 
   PORT=3001
   MONGODB_URI=mongodb://localhost:27017/senza_sistema
-  TOTEM_MONGODB_URI=mongodb://localhost:27017/senza_totem
   TOTEM_API_KEY=<clave compartida, igual en el tótem>
+  JWT_SECRET=<openssl rand -hex 32>   (obligatoria)
+  JWT_EXPIRES_IN=12h
+  SEED_ADMIN_PASSWORD / SEED_DEFAULT_PASSWORD   (solo para npm run seed)
+
+  Detalle de cada variable y de la conexión con el tótem: docs/SEGURIDAD.md
   CORS_ORIGIN=http://localhost:4300
   NODE_ENV=development
 
@@ -135,7 +139,9 @@ TERMINAL 2 — Frontend (App)
     6. Secrets del repo en GitHub: SSH_HOST, SSH_USER, SSH_KEY
     7. Paquete ghcr.io público, o en el VPS: docker login ghcr.io
     8. Primer deploy: push a master (o "Run workflow" en Actions)
-    9. Seed (una vez): docker compose exec turnero node dist/seeds/seed.js
+    9. Seed (una vez), con las contraseñas iniciales por entorno:
+         docker compose exec -e SEED_ADMIN_PASSWORD=... -e SEED_DEFAULT_PASSWORD=... \
+           turnero node dist/seeds/seed.js
 
   El tótem debe apuntar a https://tu-dominio.com y enviar el header
   x-totem-api-key con el mismo valor de TOTEM_API_KEY.

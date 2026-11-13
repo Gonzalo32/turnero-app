@@ -6,7 +6,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    env_file: .env
+    # Caddy solo necesita el dominio; los secretos quedan en el contenedor del turnero.
+    environment:
+      - DOMAIN=${DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

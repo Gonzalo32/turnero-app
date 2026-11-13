@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { professionalService } from './professional.service';
+import { UserRole } from './professional.model';
 
 /** GET /api/v1/professionals */
-export async function getProfessionals(_req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getProfessionals(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const professionals = await professionalService.getActiveProfessionals();
+    const professionals = await professionalService.getActiveProfessionals(req.user?.role === UserRole.ADMIN);
     res.json({ success: true, data: professionals, message: null });
   } catch (err) {
     next(err);
