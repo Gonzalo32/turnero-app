@@ -3,6 +3,7 @@ import { signToken } from '../../middlewares/auth.middleware';
 import { LoginDto, LoginResponseData } from './auth.types';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
+import { emitSessionDisplaced } from '../queue/queue.socket';
 
 export class AuthService {
   /**
@@ -45,9 +46,54 @@ export class AuthService {
       throw createError('Correo o contraseña incorrectos', 401, 'INVALID_CREDENTIALS');
     }
 
+    // Verificar si otro profesional activo ya está utilizando el consultorio seleccionado
+    const occupants = await Professional.find({
+      _id: { $ne: user._id },
+      active: true,
+      office,
+    })
+      .sort({ updatedAt: -1 })
+      .select('_id firstName lastName office');
+
+    if (occupants.length > 0 && !dto.force) {
+      const occupant = occupants[0];
+      logger.info(
+        `[AuthService] Consultorio en uso (${office}) por ${occupant.firstName} ${occupant.lastName}; solicita acceso ${user.firstName} ${user.lastName}`
+      );
+      return {
+        conflict: {
+          office,
+          occupiedBy: {
+            _id: occupant._id.toString(),
+            firstName: occupant.firstName,
+            lastName: occupant.lastName,
+          },
+        },
+      };
+    }
+
+    const displacedProfessionalIds = occupants.map((o) => o._id.toString());
+
+    // Si se confirma continuar (force) o había otro profesional en ese consultorio, desloguearlo liberando su consultorio
+    if (displacedProfessionalIds.length > 0) {
+      await Professional.updateMany(
+        { _id: { $ne: user._id }, office },
+        { $set: { office: '' } }
+      );
+    }
+
     // Persistir consultorio seleccionado en esta sesión
     user.office = office;
     await user.save();
+
+    if (displacedProfessionalIds.length > 0) {
+      emitSessionDisplaced({
+        office,
+        newProfessionalId: user._id.toString(),
+        displacedProfessionalIds,
+        replacedByName: `${user.firstName} ${user.lastName}`.trim(),
+      });
+    }
 
     logger.info(`[AuthService] Inicio de sesión exitoso: ${user._id} en ${office}`);
 
@@ -65,6 +111,17 @@ export class AuthService {
       },
       token: signToken({ id: user._id.toString(), role }),
     };
+  }
+
+  /**
+   * Libera el consultorio asignado al profesional cuando cierra su sesión.
+   */
+  async logout(professionalId?: string): Promise<void> {
+    const id = professionalId?.trim();
+    if (!id) return;
+
+    await Professional.findByIdAndUpdate(id, { $set: { office: '' } });
+    logger.info(`[AuthService] Cierre de sesión: consultorio liberado para profesional ${id}`);
   }
 }
 

@@ -9,12 +9,23 @@ export interface LoginCredentials {
   email: string;
   password: string;
   office: string;
+  force?: boolean;
+}
+
+export interface OfficeConflict {
+  office: string;
+  occupiedBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface LoginResult {
-  user: Professional;
+  user?: Professional;
   /** JWT de sesión: va en Authorization: Bearer y en el handshake del socket */
-  token: string;
+  token?: string;
+  conflict?: OfficeConflict;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +40,25 @@ export class AuthService {
     return this.http.post<ApiResponse<LoginResult>>(
       `${environment.apiUrl}/auth/login`,
       credentials
+    );
+  }
+
+  /**
+   * Notifica al backend el cierre de sesión para liberar el consultorio ocupado.
+   */
+  logout(professionalId: string): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(
+      `${environment.apiUrl}/auth/logout`,
+      { professionalId }
+    );
+  }
+
+  /**
+   * Obtiene la lista de profesionales activos desde el backend para verificar si el consultorio sigue asignado.
+   */
+  getProfessionalSession(_professionalId?: string): Observable<ApiResponse<Professional[]>> {
+    return this.http.get<ApiResponse<Professional[]>>(
+      `${environment.apiUrl}/professionals`
     );
   }
 }

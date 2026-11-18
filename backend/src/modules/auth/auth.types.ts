@@ -4,6 +4,7 @@ export interface LoginDto {
   email: string;
   password: string;
   office: string;
+  force?: boolean;
 }
 
 export interface AuthUserData {
@@ -16,7 +17,17 @@ export interface AuthUserData {
   role: UserRole;
 }
 
+export interface OfficeConflictData {
+  office: string;
+  occupiedBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
 export interface LoginResponseData {
-  user: AuthUserData;
-  token: string;
+  user?: AuthUserData;
+  token?: string;
+  conflict?: OfficeConflictData;
 }
