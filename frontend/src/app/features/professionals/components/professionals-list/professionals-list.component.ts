@@ -53,35 +53,44 @@ export class ProfessionalsListComponent implements OnInit {
       key: 'lastName',
       header: 'Odontólogo',
       type: 'avatar',
-      width: '28%',
+      width: '24%',
       format: (_, row) => `${row.lastName}, ${row.firstName}`
     },
     {
       key: 'licenseNumber',
       header: 'Matrícula',
       type: 'text',
-      width: '16%',
+      width: '14%',
       format: (val) => (val ? String(val).trim() : 'Sin matrícula')
     },
     {
       key: 'phone',
       header: 'Teléfono',
       type: 'text',
-      width: '18%',
+      width: '16%',
       format: (val) => (val ? String(val).trim() : '—')
     },
     {
       key: 'email',
       header: 'Correo',
       type: 'text',
-      width: '24%',
+      width: '20%',
       format: (val) => (val ? String(val).trim() : '—')
+    },
+    {
+      key: 'role',
+      header: 'Privilegios',
+      type: 'badge',
+      width: '14%',
+      align: 'center',
+      format: (val) => (val === 'ADMIN' ? 'Administrador' : 'Estándar'),
+      badgeClass: (val) => (val === 'ADMIN' ? 'badge-purple' : '')
     },
     {
       key: 'active',
       header: 'Estado',
       type: 'badge',
-      width: '14%',
+      width: '12%',
       align: 'center',
       format: (val) => (val ? 'Activo' : 'Inactivo'),
       badgeClass: (val) => (val ? 'badge-active' : 'badge-inactive')

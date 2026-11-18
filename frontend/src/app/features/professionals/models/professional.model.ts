@@ -13,6 +13,7 @@ export interface Professional {
   phone?: string;
   address?: string;
   active: boolean;
+  role?: 'ADMIN' | 'PROFESSIONAL';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -28,6 +29,7 @@ export interface CreateProfessionalDto {
   password?: string;
   phone?: string;
   address?: string;
+  role?: 'ADMIN' | 'PROFESSIONAL';
 }
 
 /** Retorna el nombre completo formateado del profesional */

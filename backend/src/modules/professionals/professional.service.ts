@@ -1,4 +1,4 @@
-import { Professional, IProfessional } from './professional.model';
+import { Professional, IProfessional, UserRole } from './professional.model';
 import { createError } from '../../middlewares/error.middleware';
 import { totemIntegrationService } from '../../integrations/totem/totem.service';
 import { logger } from '../../utils/logger';
@@ -7,7 +7,7 @@ import { logger } from '../../utils/logger';
 const MIN_PASSWORD_LENGTH = 8;
 
 /** Lo que ve un usuario no administrador de otro profesional (AGENTS.md §58). */
-const PUBLIC_FIELDS = '_id firstName lastName office active';
+const PUBLIC_FIELDS = '_id firstName lastName office active role';
 
 export interface CreateProfessionalDto {
   firstName: string;
@@ -20,6 +20,7 @@ export interface CreateProfessionalDto {
   phone?: string;
   address?: string;
   office?: string;
+  role?: UserRole;
 }
 
 export interface UpdateProfessionalDto extends Partial<CreateProfessionalDto> {
@@ -93,6 +94,7 @@ export class ProfessionalService {
       phone: data.phone?.trim(),
       address: data.address?.trim(),
       office: data.office?.trim(),
+      role: data.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.PROFESSIONAL,
       active: true,
     });
 
@@ -121,6 +123,7 @@ export class ProfessionalService {
     if (data.phone !== undefined) prof.phone = data.phone?.trim();
     if (data.address !== undefined) prof.address = data.address?.trim();
     if (data.office !== undefined) prof.office = data.office?.trim();
+    if (data.role !== undefined) prof.role = data.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.PROFESSIONAL;
     if (typeof data.active === 'boolean') prof.active = data.active;
 
     if (data.email) {

@@ -43,7 +43,8 @@ export class ProfessionalFormModalComponent implements OnInit {
       dni: [prof?.dni || '', [Validators.pattern(/^[0-9]{7,9}$/)]],
       birthDate: [prof?.birthDate ? prof.birthDate.substring(0, 10) : ''],
       phone: [prof?.phone || ''],
-      address: [prof?.address || '']
+      address: [prof?.address || ''],
+      hasPrivileges: [prof?.role === 'ADMIN']
     });
   }
 
@@ -76,6 +77,7 @@ export class ProfessionalFormModalComponent implements OnInit {
       password: val.password || undefined,
       phone: val.phone?.trim() || undefined,
       address: val.address?.trim() || undefined,
+      role: val.hasPrivileges ? 'ADMIN' : 'PROFESSIONAL',
     };
 
     try {
