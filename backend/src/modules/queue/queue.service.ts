@@ -186,6 +186,10 @@ export class QueueService {
     const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.CALLED;
     entry.llamadoAt = new Date();
+    if (!entry.consultorio) {
+      const prof = await Professional.findById(entry.professionalId);
+      entry.consultorio = prof?.office || '';
+    }
     const saved = await entry.save();
     emitPatientCalled(saved);
     return saved;
@@ -195,6 +199,10 @@ export class QueueService {
     const entry = await this.findActiveEntry(entryId, actor);
     entry.estado = QueueStatus.IN_ATTENTION;
     entry.inicioAtencionAt = new Date();
+    if (!entry.consultorio) {
+      const prof = await Professional.findById(entry.professionalId);
+      entry.consultorio = prof?.office || '';
+    }
     const saved = await entry.save();
     emitPatientStarted(saved);
     return saved;

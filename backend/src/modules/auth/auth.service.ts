@@ -1,9 +1,11 @@
 import { Professional, UserRole } from '../professionals/professional.model';
+import { Atencion } from '../atenciones/atencion.model';
+import { QueueStatus } from '../queue/queue.types';
 import { signToken } from '../../middlewares/auth.middleware';
 import { LoginDto, LoginResponseData } from './auth.types';
 import { createError } from '../../middlewares/error.middleware';
 import { logger } from '../../utils/logger';
-import { emitSessionDisplaced } from '../queue/queue.socket';
+import { emitSessionDisplaced, emitOfficeAssigned } from '../queue/queue.socket';
 
 export class AuthService {
   /**
@@ -80,11 +82,29 @@ export class AuthService {
         { _id: { $ne: user._id }, office },
         { $set: { office: '' } }
       );
+      for (const displacedId of displacedProfessionalIds) {
+        emitOfficeAssigned({ professionalId: displacedId, office: '' });
+      }
     }
 
     // Persistir consultorio seleccionado en esta sesión
     user.office = office;
     await user.save();
+
+    // Actualizar consultorio en todas las atenciones activas (espera y llamado) del profesional
+    await Atencion.updateMany(
+      {
+        professionalId: user._id.toString(),
+        estado: { $in: [QueueStatus.WAITING, QueueStatus.CALLED] },
+      },
+      { $set: { consultorio: office } }
+    );
+
+    // Notificar al televisor y clientes en tiempo real el consultorio del profesional
+    emitOfficeAssigned({
+      professionalId: user._id.toString(),
+      office,
+    });
 
     if (displacedProfessionalIds.length > 0) {
       emitSessionDisplaced({
@@ -121,6 +141,7 @@ export class AuthService {
     if (!id) return;
 
     await Professional.findByIdAndUpdate(id, { $set: { office: '' } });
+    emitOfficeAssigned({ professionalId: id, office: '' });
     logger.info(`[AuthService] Cierre de sesión: consultorio liberado para profesional ${id}`);
   }
 }

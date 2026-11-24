@@ -105,7 +105,10 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
         const prof = profs.get(entry.professionalId);
         const profName = prof ? `${prof.firstName} ${prof.lastName}` : 'Profesional asignado';
         const profColor = '#866385';
-        const office = entry.office || prof?.office || 'Consultorio --';
+        const rawOffice = (entry.office && entry.office.trim()) ? entry.office : prof?.office;
+        const office = rawOffice && rawOffice.trim()
+          ? (rawOffice.toLowerCase().includes('consultorio') ? rawOffice : `Consultorio ${rawOffice}`)
+          : 'Consultorio --';
 
         const dateObj = new Date(entry.joinedAt);
         const hours = String(dateObj.getHours()).padStart(2, '0');
@@ -139,8 +142,13 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
     }, 1000);
 
     // Sincronización continua de respaldo cada 5 segundos
+    let pollCount = 0;
     this.syncInterval = setInterval(() => {
       this.loadQueue();
+      pollCount++;
+      if (pollCount % 3 === 0) {
+        this.loadProfessionals();
+      }
     }, 5000);
   }
 
@@ -224,7 +232,28 @@ export class TurneroTvComponent implements OnInit, OnDestroy {
     const offCompleted = offRemove(QUEUE_EVENTS.PATIENT_COMPLETED);
     const offCancelled = offRemove(QUEUE_EVENTS.PATIENT_CANCELLED);
 
-    this.socketCleanups = [offAdded, offCalled, offStarted, offCompleted, offCancelled];
+    // Cuando un profesional inicia sesión y se le asigna su consultorio en vivo
+    const offOfficeAssigned = this.socketService.on<{ professionalId: string; office: string }>(
+      QUEUE_EVENTS.OFFICE_ASSIGNED,
+      (payload) => {
+        // 1. Actualizar el mapa de profesionales en memoria
+        this.professionalsMap.update(map => {
+          const next = new Map(map);
+          const prof = next.get(payload.professionalId);
+          if (prof) {
+            next.set(payload.professionalId, { ...prof, office: payload.office });
+          }
+          return next;
+        });
+
+        // 2. Actualizar el consultorio de las atenciones de este profesional en la lista
+        this.allEntries.update(list =>
+          list.map(e => (e.professionalId === payload.professionalId ? { ...e, office: payload.office } : e))
+        );
+      }
+    );
+
+    this.socketCleanups = [offAdded, offCalled, offStarted, offCompleted, offCancelled, offOfficeAssigned];
   }
 
   /**

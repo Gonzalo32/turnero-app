@@ -110,6 +110,23 @@ export interface SessionDisplacedPayload {
   replacedByName: string;
 }
 
+export interface OfficeAssignedPayload {
+  professionalId: string;
+  office: string;
+}
+
+/**
+ * Notifica en tiempo real que se asignó o modificó el consultorio de un profesional,
+ * para que el televisor y los clientes actualicen la sala de espera sin recargar.
+ */
+export function emitOfficeAssigned(payload: OfficeAssignedPayload): void {
+  if (!io) return;
+  io.emit(QUEUE_EVENTS.OFFICE_ASSIGNED, payload);
+  logger.info(
+    `[Socket] ${QUEUE_EVENTS.OFFICE_ASSIGNED} emitido para profesional ${payload.professionalId} -> ${payload.office || 'sin consultorio'}`
+  );
+}
+
 /**
  * Notifica en tiempo real que un consultorio pasó a ser ocupado por otro profesional,
  * para desloguear automáticamente al odontólogo anterior.

@@ -62,4 +62,5 @@ export const QUEUE_EVENTS = {
   PATIENT_STARTED: 'queue:patient-started',
   PATIENT_COMPLETED: 'queue:patient-completed',
   PATIENT_CANCELLED: 'queue:patient-cancelled',
+  OFFICE_ASSIGNED: 'queue:office-assigned',
 } as const;
