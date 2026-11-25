@@ -1,4 +1,7 @@
 import { Professional, IProfessional, UserRole } from './professional.model';
+import { Atencion } from '../atenciones/atencion.model';
+import { QueueStatus } from '../queue/queue.types';
+import { emitOfficeAssigned } from '../queue/queue.socket';
 import { createError } from '../../middlewares/error.middleware';
 import { totemIntegrationService } from '../../integrations/totem/totem.service';
 import { logger } from '../../utils/logger';
@@ -122,6 +125,7 @@ export class ProfessionalService {
     if (data.birthDate !== undefined) prof.birthDate = data.birthDate ? new Date(data.birthDate) : undefined;
     if (data.phone !== undefined) prof.phone = data.phone?.trim();
     if (data.address !== undefined) prof.address = data.address?.trim();
+    const previousOffice = prof.office || '';
     if (data.office !== undefined) prof.office = data.office?.trim();
     if (data.role !== undefined) prof.role = data.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.PROFESSIONAL;
     if (typeof data.active === 'boolean') prof.active = data.active;
@@ -146,6 +150,22 @@ export class ProfessionalService {
 
     await prof.save();
     logger.info(`[ProfessionalService] Odontólogo actualizado: ${prof._id}`);
+
+    // Si cambió el consultorio, actualizar las atenciones activas y emitir evento a la TV
+    const newOffice = prof.office || '';
+    if (data.office !== undefined && newOffice !== previousOffice) {
+      await Atencion.updateMany(
+        {
+          professionalId: prof._id.toString(),
+          estado: { $in: [QueueStatus.WAITING, QueueStatus.CALLED] },
+        },
+        { $set: { consultorio: newOffice } }
+      );
+      emitOfficeAssigned({
+        professionalId: prof._id.toString(),
+        office: newOffice,
+      });
+    }
 
     // Avisar al tótem (ya persistido): él vuelve a pedir la lista de profesionales.
     totemIntegrationService.notifyProfessionalsUpdated();
